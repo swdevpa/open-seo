@@ -19,6 +19,11 @@
   "placement": {
     "mode": "smart",
   },
+  "vars": {
+    "AUTH_MODE": "cloudflare_access",
+    "TEAM_DOMAIN": "https://swdevpa.cloudflareaccess.com",
+    "POLICY_AUD": "d2fd0ad83fd58992e6eff116ebb96ce477ba2738994263017a2d117b4e2881c3",
+  },
   "workflows": [
     {
       "name": "site-audit-workflow",
@@ -88,18 +93,18 @@
   "kv_namespaces": [
     {
       "binding": "KV",
-      "id": "4abd52f3f2c549ac83cc2cb4ceec8620",
+      "id": "39433b494e6242d6b9773a13614d6af6",
     },
     {
       "binding": "OAUTH_KV",
-      "id": "bd1759494309474a9b423b029967b0db",
+      "id": "ac65e51c0f624657840eac249695ad29",
     },
   ],
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "open-seo",
-      "database_id": "37bee90a-e1aa-404f-b01e-b0d1d479bda1",
+      "database_id": "184a46ad-989f-4e26-aab6-8260464e460e",
       "migrations_dir": "drizzle",
     },
   ],

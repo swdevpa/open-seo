@@ -52,3 +52,5 @@ export {
   fetchLlmResponse,
   fetchLlmTopPages,
 } from "@/server/lib/dataforseo/ai";
+
+export { fetchContentOptimizationSource } from "@/server/lib/dataforseo/content-optimization";

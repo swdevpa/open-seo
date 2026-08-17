@@ -121,6 +121,13 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
     lighthouse: {
       live: meter(customer, (s) => s.fetchLighthouseResult),
     },
+    contentOptimization: {
+      scan: meter(
+        customer,
+        (s) => s.fetchContentOptimizationSource,
+        "content_optimization",
+      ),
+    },
     aiSearch: {
       mentionsSearch: meter(customer, (s) => s.fetchLlmMentionsSearch),
       aggregatedMetrics: meter(customer, (s) => s.fetchLlmAggregatedMetrics),

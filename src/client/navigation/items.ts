@@ -7,6 +7,7 @@ import {
   Link2,
   MessageSquare,
   Search,
+  ScanSearch,
   Sparkles,
   TrendingUp,
 } from "lucide-react";
@@ -67,6 +68,11 @@ const projectNavItems = [
     label: "Prompt Explorer",
     icon: MessageSquare,
   },
+  {
+    to: "/p/$projectId/content-optimization" as const,
+    label: "Content Optimization",
+    icon: ScanSearch,
+  },
 ] as const;
 
 const aiNavItem = linkOptions({
@@ -111,6 +117,7 @@ export function getProjectNavGroups(projectId: string) {
         byPath("/p/$projectId/backlinks"),
         byPath("/p/$projectId/brand-lookup"),
         byPath("/p/$projectId/prompt-explorer"),
+        byPath("/p/$projectId/content-optimization"),
       ],
     },
     {

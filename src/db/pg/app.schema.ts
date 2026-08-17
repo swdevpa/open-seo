@@ -409,3 +409,29 @@ export const backlinkSnapshots = pgTable(
     ),
   ],
 );
+
+// Stored content optimization reports. The report JSON is versioned in the
+// shared schema so old scans remain readable when the report shape changes.
+export const contentScans = pgTable(
+  "content_scans",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    keyword: text("keyword").notNull(),
+    locationCode: integer("location_code").notNull(),
+    languageCode: text("language_code").notNull(),
+    score: integer("score").notNull(),
+    grade: text("grade").notNull(),
+    report: text("report").notNull(),
+    createdAt: timestampColumn("created_at").notNull().default(isoNow),
+  },
+  (table) => [
+    index("content_scans_project_created_idx").on(
+      table.projectId,
+      table.createdAt,
+    ),
+  ],
+);

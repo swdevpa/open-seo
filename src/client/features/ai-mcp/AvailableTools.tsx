@@ -106,6 +106,17 @@ const toolCategories: ToolCategory[] = [
         title: "Get backlinks profile",
         description: "Fetch paginated link-level backlink rows.",
       },
+      {
+        name: "run_content_optimization",
+        title: "Run content optimization",
+        description:
+          "Compare a page with top organic pages and return entities, variations, page type, questions, links, and actions.",
+      },
+      {
+        name: "get_content_optimization",
+        title: "Get content optimization report",
+        description: "Read a stored content optimization report.",
+      },
     ],
   },
   {

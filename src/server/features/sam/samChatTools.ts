@@ -26,6 +26,10 @@ import {
   inspectUrlsTool,
 } from "@/server/mcp/tools/search-console-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
+import {
+  getContentOptimizationTool,
+  runContentOptimizationTool,
+} from "@/server/mcp/tools/content-optimization-tools";
 import { discoverSiteUrls, readPages, readSite } from "@/server/lib/scrape";
 import openSeoFactSheet from "@/server/features/onboarding/openseo-fact-sheet.md?raw";
 
@@ -220,5 +224,7 @@ export function buildSamMcpTools(
     get_keyword_metrics: adaptTool(getKeywordMetricsTool),
     get_search_console_performance: adaptTool(getSearchConsolePerformanceTool),
     inspect_urls: adaptTool(inspectUrlsTool),
+    run_content_optimization: adaptTool(runContentOptimizationTool),
+    get_content_optimization: adaptTool(getContentOptimizationTool),
   };
 }

@@ -6,6 +6,7 @@ import {
   type ContentOptimizationReport,
 } from "@/shared/content-optimization";
 import { ContentScanRepository } from "../repositories/ContentScanRepository";
+import { canonicalizeContentOptimizationUrl } from "./contentOptimizationUrl";
 import { buildContentOptimizationReport } from "./contentOptimizationReport";
 
 export type ContentOptimizationRunInput = {
@@ -27,17 +28,18 @@ async function run(
   input: ContentOptimizationRunInput,
   billingCustomer: BillingCustomerContext,
 ): Promise<ContentOptimizationScan> {
+  const url = canonicalizeContentOptimizationUrl(input.url);
   const source = await createDataforseoClient(
     billingCustomer,
   ).contentOptimization.scan({
-    url: input.url,
+    url,
     keyword: input.keyword,
     locationCode: input.locationCode,
     languageCode: input.languageCode,
     creditFeature: "content_optimization",
   });
   const report = buildContentOptimizationReport(source, {
-    url: input.url,
+    url,
     keyword: input.keyword,
     locationCode: input.locationCode,
     languageCode: input.languageCode,
@@ -46,7 +48,7 @@ async function run(
   const row = await ContentScanRepository.insert({
     id: crypto.randomUUID(),
     projectId: input.projectId,
-    url: input.url,
+    url,
     keyword: input.keyword,
     locationCode: input.locationCode,
     languageCode: input.languageCode,

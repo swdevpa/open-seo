@@ -732,7 +732,7 @@ export function ContentOptimizationPage({
             {getStandardErrorMessage(reportQuery.error)}
           </div>
         ) : null}
-        {reportQuery.isPending ? (
+        {scanId && reportQuery.isPending ? (
           <div className="flex items-center gap-2 rounded-lg border border-base-300 bg-base-100 p-6 text-sm text-base-content/60">
             <LoaderCircle className="size-4 animate-spin" /> Loading report…
           </div>

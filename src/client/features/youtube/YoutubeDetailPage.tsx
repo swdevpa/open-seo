@@ -6,29 +6,18 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Loader2, RefreshCw, Unplug, Youtube } from "lucide-react";
-import {
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { ArrowLeft, RefreshCw, Unplug, Youtube } from "lucide-react";
 import { toast } from "sonner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { defaultYoutubeDateRange, type YoutubeSearch } from "./youtubeSearch";
 import { startYoutubeLink } from "./startYoutubeLink";
+import { YoutubeActivityChart } from "./YoutubeActivityChart";
 import { YoutubeDateRangeControls } from "./YoutubeDateRangeControls";
 import { YoutubeKpiCards } from "./YoutubeKpiCards";
 import {
   disconnectYoutubeChannel,
   getYoutubeChannelDetail,
 } from "@/serverFunctions/youtube";
-
-function formatNumber(value: number): string {
-  return new Intl.NumberFormat("en-US").format(value);
-}
 
 function statusLabel(status: "connected" | "reconnect" | "unavailable") {
   if (status === "reconnect") return "Reconnect";
@@ -279,101 +268,13 @@ export function YoutubeDetailPage({
               period={detail.period}
               detail
             />
-            <div className="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm sm:p-5">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h2 className="font-semibold">Activity over time</h2>
-                  <p className="text-xs text-base-content/60">
-                    {detail.seriesGranularity === "day"
-                      ? "Daily activity"
-                      : `Grouped by ${detail.seriesGranularity}`}
-                  </p>
-                </div>
-                {detailQuery.isFetching && !detailQuery.isPending ? (
-                  <Loader2 className="size-4 animate-spin text-base-content/45" />
-                ) : null}
-              </div>
-              {detail.series.length === 0 ? (
-                <div className="grid h-80 place-items-center text-sm text-base-content/55">
-                  No activity data for this range.
-                </div>
-              ) : (
-                <div className="h-80 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart
-                      data={detail.series}
-                      margin={{ top: 8, right: 12, left: 0, bottom: 8 }}
-                    >
-                      <XAxis
-                        dataKey="date"
-                        tick={{ fontSize: 11 }}
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(value: string) =>
-                          detail.seriesGranularity === "month"
-                            ? value.slice(0, 7)
-                            : value.slice(5)
-                        }
-                        minTickGap={24}
-                      />
-                      <YAxis
-                        tick={{ fontSize: 11 }}
-                        tickLine={false}
-                        axisLine={false}
-                        width={48}
-                      />
-                      <Tooltip
-                        formatter={(
-                          value: number | undefined,
-                          name: string | undefined,
-                        ) => [formatNumber(value ?? 0), name ?? ""]}
-                        labelFormatter={(label) => String(label)}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="views"
-                        name="Analytics views"
-                        stroke="#ef4444"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="engagedViews"
-                        name="Engaged views"
-                        stroke="#a855f7"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="likes"
-                        name="Likes"
-                        stroke="#f59e0b"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="comments"
-                        name="Comments"
-                        stroke="#3b82f6"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="netSubscribers"
-                        name="Net subscribers"
-                        stroke="#22c55e"
-                        strokeWidth={2}
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </div>
+            <YoutubeActivityChart
+              title="Activity over time"
+              range={detail.range}
+              series={detail.series}
+              seriesGranularity={detail.seriesGranularity}
+              isFetching={detailQuery.isFetching && !detailQuery.isPending}
+            />
           </>
         ) : null}
         {detail?.range ? (

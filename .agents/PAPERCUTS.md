@@ -10,6 +10,7 @@ data, or sensitive paths.
 
 ## Open
 
+- [ ] `2026-08-25T17:56:00Z` — `codex` — The root Vite dev server does not open within 60 seconds in the current checkout. Vite transforms 3,668 modules and then waits without CPU progress, which blocks the native Playwright smoke check and the production bundle. Reproduce with `python3 .agents/skills/webapp-testing/scripts/with_server.py` and stabilize or document the local Vite/Cloudflare build path.
 - [ ] `2026-08-17T06:07:16Z` — `codex` — `.env.selfhost.example` links to the removed `docs/SELF_HOSTING_CLOUDFLARE_ALCHEMY.md`, while the setup guide is now `docs/SELF_HOSTING_CLOUDFLARE.md`. Update the template link so a fresh Cloudflare self-host setup opens the correct guide.
 - [ ] `2026-08-05T20:59:09Z` — `codex` — The documented `pnpm seed:rank-tracking` command fails before opening local D1 because `scripts/seed-rank-tracking.ts` imports the provider-aware `src/db/schema` barrel and plain `tsx` cannot load the resulting `cloudflare:workers` URL. Keep the seed script on dialect-local schema imports or run it through a Workers-compatible execution path. (Workaround: seed via raw SQL with `wrangler d1 execute DB --local`.)
 - [ ] `2026-08-01T16:28:36Z` — `claude` — web's pinned wrangler 4.71.0 fails `kv namespace create` with a bare "Authentication error [code: 10000]" even though the OAuth token has workers_kv write scope; wrangler@4.118.0 succeeds with identical auth. Fix: bump wrangler in web/package.json.

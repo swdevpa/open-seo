@@ -19,6 +19,8 @@ import { resolveYoutubeDateRange, type YoutubeDateRange } from "./YoutubeDates";
 export type YoutubeMetrics = SharedYoutubeMetrics;
 
 type YoutubeConnectionStatus = "connected" | "reconnect" | "unavailable";
+type YoutubeSeriesGranularity = "day" | "week" | "month";
+type YoutubeSeriesPoint = YoutubeMetrics & { date: string };
 
 export type YoutubeOverviewItem = {
   channelId: string;
@@ -38,12 +40,18 @@ export type YoutubeOverviewItem = {
 export type YoutubeOverview = {
   range: YoutubeDateRange;
   channels: YoutubeOverviewItem[];
+  series: YoutubeSeriesPoint[];
+  seriesGranularity: YoutubeSeriesGranularity;
+  seriesCoverage: {
+    includedChannels: number;
+    totalChannels: number;
+  };
 };
 
 export type YoutubeChannelDetail = YoutubeOverviewItem & {
   range: YoutubeDateRange;
-  series: Array<YoutubeMetrics & { date: string }>;
-  seriesGranularity: "day" | "week" | "month";
+  series: YoutubeSeriesPoint[];
+  seriesGranularity: YoutubeSeriesGranularity;
 };
 
 const EMPTY_METRICS: YoutubeMetrics = {
@@ -122,16 +130,17 @@ async function loadChannelData(
   range: YoutubeDateRange,
 ) {
   const client = connectionClient(connection);
-  const [channelResult, analyticsResult] = await Promise.allSettled([
+  const [channelResult, dailyResult] = await Promise.allSettled([
     client.getChannelById(connection.channelId),
     client.queryAnalytics({
       channelId: connection.channelId,
       startDate: range.startDate,
       endDate: range.endDate,
+      dimension: "day",
     }),
   ]);
   const errors: unknown[] = [];
-  for (const result of [channelResult, analyticsResult]) {
+  for (const result of [channelResult, dailyResult]) {
     if (result.status === "rejected") errors.push(result.reason as unknown);
   }
   errors.forEach((error) => logUnexpectedFailure(error, connection.channelId));
@@ -139,9 +148,10 @@ async function loadChannelData(
     status: statusForErrors(errors),
     channel: channelResult.status === "fulfilled" ? channelResult.value : null,
     period:
-      analyticsResult.status === "fulfilled"
-        ? aggregateReport(analyticsResult.value)
+      dailyResult.status === "fulfilled"
+        ? aggregateReport(dailyResult.value)
         : null,
+    dailyReport: dailyResult.status === "fulfilled" ? dailyResult.value : null,
   };
 }
 
@@ -182,17 +192,30 @@ async function getOverview(input: {
   const connections = await YoutubeConnectionRepository.listByProjectId(
     input.projectId,
   );
-  const channels = await Promise.all(
+  const loadedChannels = await Promise.all(
     connections.map(async (connection) => {
       const item = baseItem(connection);
       const data = await loadChannelData(connection, range);
       item.status = data.status;
       applyChannel(item, data.channel);
       item.period = data.period;
-      return item;
+      return { item, dailyReport: data.dailyReport };
     }),
   );
-  return { range, channels };
+  const dailyReports = loadedChannels.flatMap(({ dailyReport }) =>
+    dailyReport ? [dailyReport] : [],
+  );
+  const chart = buildSeries(dailyReports, range);
+  return {
+    range,
+    channels: loadedChannels.map(({ item }) => item),
+    series: chart.series,
+    seriesGranularity: chart.granularity,
+    seriesCoverage: {
+      includedChannels: dailyReports.length,
+      totalChannels: connections.length,
+    },
+  };
 }
 
 function dateRangeDates(range: YoutubeDateRange): Date[] {
@@ -215,7 +238,7 @@ function rangeDays(range: YoutubeDateRange): number {
   );
 }
 
-function seriesGranularity(range: YoutubeDateRange): "day" | "week" | "month" {
+function seriesGranularity(range: YoutubeDateRange): YoutubeSeriesGranularity {
   const days = rangeDays(range);
   if (days > 366) return "month";
   if (days > 90) return "week";
@@ -236,13 +259,22 @@ function periodKey(date: Date, granularity: "day" | "week" | "month"): string {
   return mondayOfWeek(date).toISOString().slice(0, 10);
 }
 
-function buildSeries(report: YoutubeAnalyticsReport, range: YoutubeDateRange) {
+function buildSeries(
+  reports: YoutubeAnalyticsReport[],
+  range: YoutubeDateRange,
+) {
   const granularity = seriesGranularity(range);
-  const rowByDate = new Map(
-    report.rows
-      .filter((row): row is typeof row & { date: string } => Boolean(row.date))
-      .map((row) => [row.date, metricsFromValues(row.metrics)]),
-  );
+  if (reports.length === 0) return { granularity, series: [] };
+
+  const rowByDate = new Map<string, YoutubeMetrics>();
+  for (const report of reports) {
+    for (const row of report.rows) {
+      if (!row.date) continue;
+      const target = rowByDate.get(row.date) ?? { ...EMPTY_METRICS };
+      addMetrics(target, metricsFromValues(row.metrics));
+      rowByDate.set(row.date, target);
+    }
+  }
   const grouped = new Map<string, YoutubeMetrics>();
   for (const date of dateRangeDates(range)) {
     const dateValue = date.toISOString().slice(0, 10);
@@ -307,7 +339,7 @@ async function getChannelDetail(input: {
       : null;
   const chart =
     dailyResult.status === "fulfilled"
-      ? buildSeries(dailyResult.value, range)
+      ? buildSeries([dailyResult.value], range)
       : { granularity: seriesGranularity(range), series: [] };
   return {
     ...item,

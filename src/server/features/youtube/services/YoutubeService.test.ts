@@ -107,6 +107,153 @@ describe("YoutubeService", () => {
       channelId: "channel-b",
       status: "reconnect",
     });
+    expect(result.seriesCoverage).toEqual({
+      includedChannels: 1,
+      totalChannels: 2,
+    });
+  });
+
+  it("sums daily activity across channels for the overview chart", async () => {
+    const first = connection("channel-a", "youtube:project-1:channel-a");
+    const second = connection("channel-b", "youtube:project-1:channel-b");
+    mocks.listByProjectId.mockResolvedValue([first, second]);
+    const reports = new Map([
+      [
+        first.youtubeAccountId,
+        {
+          headers: ["day", "views", "engagedViews"],
+          rows: [
+            {
+              date: "2026-08-01",
+              metrics: {
+                views: 3,
+                engagedViews: 2,
+                likes: 1,
+                comments: 0,
+                subscribersGained: 2,
+                subscribersLost: 0,
+              },
+            },
+            {
+              date: "2026-08-03",
+              metrics: {
+                views: 5,
+                engagedViews: 3,
+                likes: 2,
+                comments: 1,
+                subscribersGained: 0,
+                subscribersLost: 1,
+              },
+            },
+          ],
+        },
+      ],
+      [
+        second.youtubeAccountId,
+        {
+          headers: ["day", "views", "engagedViews"],
+          rows: [
+            {
+              date: "2026-08-01",
+              metrics: {
+                views: 10,
+                engagedViews: 6,
+                likes: 4,
+                comments: 1,
+                subscribersGained: 1,
+                subscribersLost: 0,
+              },
+            },
+            {
+              date: "2026-08-02",
+              metrics: {
+                views: 4,
+                engagedViews: 2,
+                likes: 1,
+                comments: 0,
+                subscribersGained: 0,
+                subscribersLost: 0,
+              },
+            },
+          ],
+        },
+      ],
+    ]);
+    mocks.createYoutubeClient.mockImplementation(
+      ({ youtubeAccountId }: { youtubeAccountId: string }) => ({
+        getChannelById: vi.fn().mockResolvedValue(channel),
+        queryAnalytics: vi
+          .fn()
+          .mockImplementation(({ dimension }: { dimension?: "day" }) =>
+            Promise.resolve(
+              dimension === "day"
+                ? (reports.get(youtubeAccountId) ?? emptyReport)
+                : emptyReport,
+            ),
+          ),
+      }),
+    );
+
+    const result = await YoutubeService.getOverview({
+      projectId: "project-1",
+      startDate: "2026-08-01",
+      endDate: "2026-08-04",
+    });
+
+    expect(result.seriesGranularity).toBe("day");
+    expect(result.seriesCoverage).toEqual({
+      includedChannels: 2,
+      totalChannels: 2,
+    });
+    expect(result.series).toEqual([
+      {
+        date: "2026-08-01",
+        views: 13,
+        engagedViews: 8,
+        likes: 5,
+        comments: 1,
+        subscribersGained: 3,
+        subscribersLost: 0,
+        netSubscribers: 3,
+      },
+      {
+        date: "2026-08-02",
+        views: 4,
+        engagedViews: 2,
+        likes: 1,
+        comments: 0,
+        subscribersGained: 0,
+        subscribersLost: 0,
+        netSubscribers: 0,
+      },
+      {
+        date: "2026-08-03",
+        views: 5,
+        engagedViews: 3,
+        likes: 2,
+        comments: 1,
+        subscribersGained: 0,
+        subscribersLost: 1,
+        netSubscribers: -1,
+      },
+      {
+        date: "2026-08-04",
+        views: 0,
+        engagedViews: 0,
+        likes: 0,
+        comments: 0,
+        subscribersGained: 0,
+        subscribersLost: 0,
+        netSubscribers: 0,
+      },
+    ]);
+    expect(result.channels[0].period).toMatchObject({
+      views: 8,
+      engagedViews: 5,
+      likes: 3,
+      comments: 1,
+      netSubscribers: 1,
+    });
   });
 
   it("fills missing daily rows and groups long ranges by month", async () => {

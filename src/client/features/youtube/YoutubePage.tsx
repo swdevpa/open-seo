@@ -258,8 +258,9 @@ export function YoutubePage({
                     <tr>
                       <th>Channel</th>
                       <th className="text-right">Subscribers</th>
-                      <th className="text-right">Total views</th>
-                      <th className="text-right">Views</th>
+                      <th className="text-right">Public lifetime views</th>
+                      <th className="text-right">Analytics views</th>
+                      <th className="text-right">Engaged views</th>
                       <th className="text-right">Likes</th>
                       <th className="text-right">Comments</th>
                       <th className="text-right">Net subs</th>
@@ -301,6 +302,9 @@ export function YoutubePage({
                         </td>
                         <td className="text-right tabular-nums">
                           {formatNumber(channel.period?.views ?? 0)}
+                        </td>
+                        <td className="text-right tabular-nums">
+                          {formatNumber(channel.period?.engagedViews ?? 0)}
                         </td>
                         <td className="text-right tabular-nums">
                           {formatNumber(channel.period?.likes ?? 0)}
@@ -369,6 +373,7 @@ function YoutubeOverviewSummary({
       result.current.videoCount += channel.current?.videoCount ?? 0;
       if (channel.period) {
         result.period.views += channel.period.views;
+        result.period.engagedViews += channel.period.engagedViews;
         result.period.likes += channel.period.likes;
         result.period.comments += channel.period.comments;
         result.period.subscribersGained += channel.period.subscribersGained;
@@ -381,6 +386,7 @@ function YoutubeOverviewSummary({
       current: { viewCount: 0, subscriberCount: 0, videoCount: 0 },
       period: {
         views: 0,
+        engagedViews: 0,
         likes: 0,
         comments: 0,
         subscribersGained: 0,
@@ -395,8 +401,8 @@ function YoutubeOverviewSummary({
 function YoutubeOverviewSkeleton() {
   return (
     <div className="space-y-4" aria-label="Loading YouTube data">
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {Array.from({ length: 6 }, (_, index) => (
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
+        {Array.from({ length: 7 }, (_, index) => (
           <div
             key={index}
             className="h-24 animate-pulse rounded-xl bg-base-200"

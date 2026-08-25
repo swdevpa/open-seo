@@ -48,6 +48,7 @@ export type YoutubeChannelDetail = YoutubeOverviewItem & {
 
 const EMPTY_METRICS: YoutubeMetrics = {
   views: 0,
+  engagedViews: 0,
   likes: 0,
   comments: 0,
   subscribersGained: 0,
@@ -58,6 +59,7 @@ const EMPTY_METRICS: YoutubeMetrics = {
 function metricsFromValues(values: Record<string, number>): YoutubeMetrics {
   const metrics = {
     views: values.views ?? 0,
+    engagedViews: values.engagedViews ?? 0,
     likes: values.likes ?? 0,
     comments: values.comments ?? 0,
     subscribersGained: values.subscribersGained ?? 0,
@@ -70,6 +72,7 @@ function metricsFromValues(values: Record<string, number>): YoutubeMetrics {
 
 function addMetrics(target: YoutubeMetrics, source: YoutubeMetrics): void {
   target.views += source.views;
+  target.engagedViews += source.engagedViews;
   target.likes += source.likes;
   target.comments += source.comments;
   target.subscribersGained += source.subscribersGained;

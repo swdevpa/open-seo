@@ -243,8 +243,8 @@ export function YoutubeDetailPage({
 
         {detailQuery.isPending ? (
           <div className="space-y-4" aria-label="Loading YouTube channel data">
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              {Array.from({ length: 6 }, (_, index) => (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
+              {Array.from({ length: 7 }, (_, index) => (
                 <div
                   key={index}
                   className="h-24 animate-pulse rounded-xl bg-base-200"
@@ -332,8 +332,16 @@ export function YoutubeDetailPage({
                       <Line
                         type="monotone"
                         dataKey="views"
-                        name="Views"
+                        name="Analytics views"
                         stroke="#ef4444"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="engagedViews"
+                        name="Engaged views"
+                        stroke="#a855f7"
                         strokeWidth={2}
                         dot={false}
                       />

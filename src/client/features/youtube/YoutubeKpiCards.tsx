@@ -26,8 +26,18 @@ export function YoutubeKpiCards({
       label: "Subscribers",
       value: formatNumber(current?.subscriberCount ?? 0),
     },
-    { label: "Total views", value: formatNumber(current?.viewCount ?? 0) },
-    { label: "Views in period", value: formatNumber(period?.views ?? 0) },
+    {
+      label: "Public lifetime views",
+      value: formatNumber(current?.viewCount ?? 0),
+    },
+    {
+      label: "Analytics views in period",
+      value: formatNumber(period?.views ?? 0),
+    },
+    {
+      label: "Engaged views in period",
+      value: formatNumber(period?.engagedViews ?? 0),
+    },
     { label: "Likes", value: formatNumber(period?.likes ?? 0) },
     { label: "Comments", value: formatNumber(period?.comments ?? 0) },
     {
@@ -36,22 +46,29 @@ export function YoutubeKpiCards({
     },
   ];
   return (
-    <div
-      className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-3 ${detail ? "xl:grid-cols-6" : "xl:grid-cols-6"}`}
-    >
-      {cards.map((card) => (
-        <div
-          key={card.label}
-          className="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm"
-        >
-          <p className="text-xs font-medium uppercase tracking-wide text-base-content/55">
-            {card.label}
-          </p>
-          <p className="mt-2 text-xl font-semibold tabular-nums">
-            {card.value}
-          </p>
-        </div>
-      ))}
+    <div className="space-y-2">
+      <div
+        className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-3 ${detail ? "xl:grid-cols-7" : "xl:grid-cols-7"}`}
+      >
+        {cards.map((card) => (
+          <div
+            key={card.label}
+            className="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm"
+          >
+            <p className="text-xs font-medium uppercase tracking-wide text-base-content/55">
+              {card.label}
+            </p>
+            <p className="mt-2 text-xl font-semibold tabular-nums">
+              {card.value}
+            </p>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-base-content/55">
+        Public lifetime views use YouTube&apos;s current channel counter. The
+        period values use YouTube Analytics. YouTube may use different counting
+        rules, especially for Shorts.
+      </p>
     </div>
   );
 }

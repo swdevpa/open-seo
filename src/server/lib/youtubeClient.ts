@@ -5,7 +5,10 @@ import {
   YoutubeMalformedResponseError,
   YoutubeTokenError,
 } from "./youtubeErrors";
-import { YOUTUBE_OAUTH_PROVIDER_ID } from "@/shared/youtube";
+import {
+  YOUTUBE_ANALYTICS_METRICS,
+  YOUTUBE_OAUTH_PROVIDER_ID,
+} from "@/shared/youtube";
 
 const YOUTUBE_DATA_API_URL = "https://www.googleapis.com/youtube/v3";
 const YOUTUBE_ANALYTICS_API_URL = "https://youtubeanalytics.googleapis.com/v2";
@@ -273,10 +276,7 @@ export function createYoutubeClient(opts: {
       const token = await accessToken();
       const url = new URL(`${YOUTUBE_ANALYTICS_API_URL}/reports`);
       url.searchParams.set("ids", `channel==${input.channelId}`);
-      url.searchParams.set(
-        "metrics",
-        "views,likes,comments,subscribersGained,subscribersLost",
-      );
+      url.searchParams.set("metrics", YOUTUBE_ANALYTICS_METRICS.join(","));
       url.searchParams.set("startDate", input.startDate);
       url.searchParams.set("endDate", input.endDate);
       if (input.dimension) url.searchParams.set("dimensions", input.dimension);

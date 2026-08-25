@@ -14,6 +14,7 @@ export const YOUTUBE_SELF_HOSTED_SETUP_DOCS_URL =
 
 export const YOUTUBE_ANALYTICS_METRICS = [
   "views",
+  "engagedViews",
   "likes",
   "comments",
   "subscribersGained",
@@ -22,6 +23,7 @@ export const YOUTUBE_ANALYTICS_METRICS = [
 
 export type YoutubeMetrics = {
   views: number;
+  engagedViews: number;
   likes: number;
   comments: number;
   subscribersGained: number;

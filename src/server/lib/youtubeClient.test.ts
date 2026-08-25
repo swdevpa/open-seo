@@ -36,11 +36,12 @@ describe("youtubeClient", () => {
           { name: "comments" },
           { name: "day" },
           { name: "views" },
+          { name: "engagedViews" },
           { name: "likes" },
           { name: "subscribersLost" },
           { name: "subscribersGained" },
         ],
-        rows: [["2", "2026-08-24", "100", "7", "1", "5"]],
+        rows: [["2", "2026-08-24", "100", "80", "7", "1", "5"]],
       }),
     );
 
@@ -60,6 +61,7 @@ describe("youtubeClient", () => {
         metrics: {
           comments: 2,
           views: 100,
+          engagedViews: 80,
           likes: 7,
           subscribersLost: 1,
           subscribersGained: 5,
@@ -76,6 +78,11 @@ describe("youtubeClient", () => {
     const request = new URL(requestUrl(mocks.fetch.mock.calls[0]?.[0]));
     expect(request.searchParams.get("ids")).toBe("channel==channel-1");
     expect(request.searchParams.get("dimensions")).toBe("day");
+    expect(request.searchParams.get("startDate")).toBe("2026-08-01");
+    expect(request.searchParams.get("endDate")).toBe("2026-08-24");
+    expect(request.searchParams.get("metrics")).toBe(
+      "views,engagedViews,likes,comments,subscribersGained,subscribersLost",
+    );
   });
 
   it("treats an empty channel response as a malformed connection", async () => {

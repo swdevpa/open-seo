@@ -11,6 +11,7 @@ import {
   organizationActivationState,
   projects,
   userOnboardingAnswers,
+  youtubeConnections,
 } from "@/db/schema";
 import { SHARED_WORKSPACE_ORGANIZATION_ID } from "./delegated-organization";
 
@@ -134,6 +135,10 @@ async function mergeLegacyWorkspaces() {
       .update(ga4Connections)
       .set(repointToShared)
       .where(inArray(ga4Connections.organizationId, legacyIds)),
+    tx
+      .update(youtubeConnections)
+      .set(repointToShared)
+      .where(inArray(youtubeConnections.organizationId, legacyIds)),
     ...(activationRows.length > 0
       ? [
           tx

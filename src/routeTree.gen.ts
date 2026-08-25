@@ -52,6 +52,7 @@ import { Route as ProjectPProjectIdContentOptimizationRouteImport } from './rout
 import { Route as ProjectPProjectIdBrandLookupRouteImport } from './routes/_project/p/$projectId/brand-lookup'
 import { Route as ProjectPProjectIdBacklinksRouteImport } from './routes/_project/p/$projectId/backlinks'
 import { Route as ProjectPProjectIdAuditRouteImport } from './routes/_project/p/$projectId/audit'
+import { Route as ProjectPProjectIdYoutubeIndexRouteImport } from './routes/_project/p/$projectId/youtube/index'
 import { Route as ProjectPProjectIdRankTrackingIndexRouteImport } from './routes/_project/p/$projectId/rank-tracking/index'
 import { Route as ProjectPProjectIdAuditIndexRouteImport } from './routes/_project/p/$projectId/audit/index'
 import { Route as ProjectPProjectIdYoutubeChannelIdRouteImport } from './routes/_project/p/$projectId/youtube/$channelId'
@@ -282,6 +283,12 @@ const ProjectPProjectIdAuditRoute = ProjectPProjectIdAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => ProjectPProjectIdRouteRoute,
 } as any)
+const ProjectPProjectIdYoutubeIndexRoute =
+  ProjectPProjectIdYoutubeIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ProjectPProjectIdYoutubeRoute,
+  } as any)
 const ProjectPProjectIdRankTrackingIndexRoute =
   ProjectPProjectIdRankTrackingIndexRouteImport.update({
     id: '/',
@@ -357,6 +364,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/youtube/$channelId': typeof ProjectPProjectIdYoutubeChannelIdRoute
   '/p/$projectId/audit/': typeof ProjectPProjectIdAuditIndexRoute
   '/p/$projectId/rank-tracking/': typeof ProjectPProjectIdRankTrackingIndexRoute
+  '/p/$projectId/youtube/': typeof ProjectPProjectIdYoutubeIndexRoute
   '/p/$projectId/audit/issues/$resultId': typeof ProjectPProjectIdAuditIssuesResultIdRoute
 }
 export interface FileRoutesByTo {
@@ -391,7 +399,6 @@ export interface FileRoutesByTo {
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
   '/p/$projectId/search-performance': typeof ProjectPProjectIdSearchPerformanceRoute
   '/p/$projectId/settings': typeof ProjectPProjectIdSettingsRoute
-  '/p/$projectId/youtube': typeof ProjectPProjectIdYoutubeRouteWithChildren
   '/api/ga4/oauth/callback': typeof ApiGa4OauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/api/youtube/oauth/callback': typeof ApiYoutubeOauthCallbackRoute
@@ -400,6 +407,7 @@ export interface FileRoutesByTo {
   '/p/$projectId/youtube/$channelId': typeof ProjectPProjectIdYoutubeChannelIdRoute
   '/p/$projectId/audit': typeof ProjectPProjectIdAuditIndexRoute
   '/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingIndexRoute
+  '/p/$projectId/youtube': typeof ProjectPProjectIdYoutubeIndexRoute
   '/p/$projectId/audit/issues/$resultId': typeof ProjectPProjectIdAuditIssuesResultIdRoute
 }
 export interface FileRoutesById {
@@ -451,6 +459,7 @@ export interface FileRoutesById {
   '/_project/p/$projectId/youtube/$channelId': typeof ProjectPProjectIdYoutubeChannelIdRoute
   '/_project/p/$projectId/audit/': typeof ProjectPProjectIdAuditIndexRoute
   '/_project/p/$projectId/rank-tracking/': typeof ProjectPProjectIdRankTrackingIndexRoute
+  '/_project/p/$projectId/youtube/': typeof ProjectPProjectIdYoutubeIndexRoute
   '/_project/p/$projectId/audit/issues/$resultId': typeof ProjectPProjectIdAuditIssuesResultIdRoute
 }
 export interface FileRouteTypes {
@@ -499,6 +508,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/youtube/$channelId'
     | '/p/$projectId/audit/'
     | '/p/$projectId/rank-tracking/'
+    | '/p/$projectId/youtube/'
     | '/p/$projectId/audit/issues/$resultId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -533,7 +543,6 @@ export interface FileRouteTypes {
     | '/p/$projectId/saved'
     | '/p/$projectId/search-performance'
     | '/p/$projectId/settings'
-    | '/p/$projectId/youtube'
     | '/api/ga4/oauth/callback'
     | '/api/gsc/oauth/callback'
     | '/api/youtube/oauth/callback'
@@ -542,6 +551,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/youtube/$channelId'
     | '/p/$projectId/audit'
     | '/p/$projectId/rank-tracking'
+    | '/p/$projectId/youtube'
     | '/p/$projectId/audit/issues/$resultId'
   id:
     | '__root__'
@@ -592,6 +602,7 @@ export interface FileRouteTypes {
     | '/_project/p/$projectId/youtube/$channelId'
     | '/_project/p/$projectId/audit/'
     | '/_project/p/$projectId/rank-tracking/'
+    | '/_project/p/$projectId/youtube/'
     | '/_project/p/$projectId/audit/issues/$resultId'
   fileRoutesById: FileRoutesById
 }
@@ -915,6 +926,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectPProjectIdAuditRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
     }
+    '/_project/p/$projectId/youtube/': {
+      id: '/_project/p/$projectId/youtube/'
+      path: '/'
+      fullPath: '/p/$projectId/youtube/'
+      preLoaderRoute: typeof ProjectPProjectIdYoutubeIndexRouteImport
+      parentRoute: typeof ProjectPProjectIdYoutubeRoute
+    }
     '/_project/p/$projectId/rank-tracking/': {
       id: '/_project/p/$projectId/rank-tracking/'
       path: '/'
@@ -1016,12 +1034,14 @@ const ProjectPProjectIdRankTrackingRouteWithChildren =
 
 interface ProjectPProjectIdYoutubeRouteChildren {
   ProjectPProjectIdYoutubeChannelIdRoute: typeof ProjectPProjectIdYoutubeChannelIdRoute
+  ProjectPProjectIdYoutubeIndexRoute: typeof ProjectPProjectIdYoutubeIndexRoute
 }
 
 const ProjectPProjectIdYoutubeRouteChildren: ProjectPProjectIdYoutubeRouteChildren =
   {
     ProjectPProjectIdYoutubeChannelIdRoute:
       ProjectPProjectIdYoutubeChannelIdRoute,
+    ProjectPProjectIdYoutubeIndexRoute: ProjectPProjectIdYoutubeIndexRoute,
   }
 
 const ProjectPProjectIdYoutubeRouteWithChildren =

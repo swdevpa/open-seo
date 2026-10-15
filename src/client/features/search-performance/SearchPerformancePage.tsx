@@ -13,6 +13,11 @@ import { TablePagination } from "@/client/components/table/TablePagination";
 import { SearchConsoleConnectionCard } from "@/client/features/gsc/SearchConsoleConnectionCard";
 import { SearchPerformanceLoadingState } from "@/client/features/search-performance/SearchPerformanceLoadingState";
 import {
+  ContentDecayPanel,
+  contentDecayQueryOptions,
+  exportContentDecay,
+} from "@/client/features/search-performance/ContentDecayTable";
+import {
   DimensionTable,
   exportDimensionRows,
   exportStriking,
@@ -29,6 +34,8 @@ import {
   getSearchPerformanceTable,
 } from "@/serverFunctions/searchPerformance";
 import {
+  CONTENT_DECAY_DEFAULT_MONTHS,
+  CONTENT_DECAY_MONTHS,
   GSC_DEVICES,
   SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE,
   SEARCH_PERFORMANCE_PAGE_SIZES,
@@ -130,6 +137,9 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
   const [pageSize, setPageSize] = useState<number>(
     SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE,
   );
+  const [decayMonths, setDecayMonths] = useState<number>(
+    CONTENT_DECAY_DEFAULT_MONTHS,
+  );
 
   // Any change to the query set (tab, filters, page size) restarts at page 1.
   useEffect(() => {
@@ -154,6 +164,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
     placeholderData: keepPreviousData,
   });
   const tableData = tableQuery.data;
+  const isDecayTab = tab === "decay";
   const tableRows = tableData?.connected ? tableData.rows : [];
   const hasNextPage = tableData?.connected ? tableData.hasNextPage : false;
 
@@ -177,6 +188,13 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
     try {
       if (tab === "striking") {
         exportStriking(report, target);
+        return;
+      }
+      if (isDecayTab) {
+        const decay = await queryClient.fetchQuery(
+          contentDecayQueryOptions(projectId, decayMonths),
+        );
+        if (decay.connected) exportContentDecay(decay, target);
         return;
       }
       const data = await exportSearchPerformanceTable({
@@ -244,57 +262,83 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                     onClick={() => setTab("pages")}
                     label="Pages"
                   />
+                  <TabButton
+                    active={isDecayTab}
+                    onClick={() => setTab("decay")}
+                    label="Content decay"
+                  />
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {reportQuery.isFetching && !reportQuery.isPending ? (
                     <Loader2 className="size-4 animate-spin text-base-content/40" />
                   ) : null}
-                  <select
-                    className="select select-bordered select-sm w-36"
-                    value={device}
-                    onChange={(event) => {
-                      setDevice(
-                        isDevice(event.target.value) ? event.target.value : ALL,
-                      );
-                    }}
-                    aria-label="Device filter"
-                  >
-                    <option value={ALL}>All devices</option>
-                    {DEVICE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="select select-bordered select-sm w-36"
-                    value={country}
-                    onChange={(event) => setCountry(event.target.value)}
-                    aria-label="Country filter"
-                  >
-                    <option value={ALL}>All countries</option>
-                    {report.countries.map((row) => (
-                      <option key={row.key} value={row.key}>
-                        {row.key.toUpperCase()}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="select select-bordered select-sm w-36"
-                    value={range}
-                    onChange={(event) => {
-                      if (isDateRange(event.target.value)) {
-                        setRange(event.target.value);
+                  {isDecayTab ? (
+                    <select
+                      className="select select-bordered select-sm w-36"
+                      value={decayMonths}
+                      onChange={(event) =>
+                        setDecayMonths(Number(event.target.value))
                       }
-                    }}
-                    aria-label="Date range"
-                  >
-                    {RANGE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                      aria-label="Months of decline"
+                    >
+                      {CONTENT_DECAY_MONTHS.map((months) => (
+                        <option key={months} value={months}>
+                          {months} months
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <>
+                      <select
+                        className="select select-bordered select-sm w-36"
+                        value={device}
+                        onChange={(event) => {
+                          setDevice(
+                            isDevice(event.target.value)
+                              ? event.target.value
+                              : ALL,
+                          );
+                        }}
+                        aria-label="Device filter"
+                      >
+                        <option value={ALL}>All devices</option>
+                        {DEVICE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="select select-bordered select-sm w-36"
+                        value={country}
+                        onChange={(event) => setCountry(event.target.value)}
+                        aria-label="Country filter"
+                      >
+                        <option value={ALL}>All countries</option>
+                        {report.countries.map((row) => (
+                          <option key={row.key} value={row.key}>
+                            {row.key.toUpperCase()}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        className="select select-bordered select-sm w-36"
+                        value={range}
+                        onChange={(event) => {
+                          if (isDateRange(event.target.value)) {
+                            setRange(event.target.value);
+                          }
+                        }}
+                        aria-label="Date range"
+                      >
+                        {RANGE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </>
+                  )}
                   <TableExportMenu
                     buttonClassName="btn btn-ghost btn-sm gap-1"
                     actions={[
@@ -318,6 +362,8 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                   projectId={projectId}
                   rows={report.strikingDistance}
                 />
+              ) : isDecayTab ? (
+                <ContentDecayPanel projectId={projectId} months={decayMonths} />
               ) : tableQuery.isPending ? (
                 <div className="flex items-center gap-2 p-8 text-sm text-base-content/60">
                   <Loader2 className="size-4 animate-spin" /> Loading…

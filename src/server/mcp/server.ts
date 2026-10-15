@@ -52,6 +52,7 @@ import { saveKeywordsTool } from "@/server/mcp/tools/save-keywords";
 import { submitIndexNowUrlsTool } from "@/server/mcp/tools/submit-indexnow-urls";
 import {
   diagnoseTrafficDropTool,
+  getContentDecayTool,
   getSearchConsolePerformanceTool,
   inspectUrlsTool,
 } from "@/server/mcp/tools/search-console-tools";
@@ -176,6 +177,7 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(getSearchConsolePerformanceTool);
   register(inspectUrlsTool);
   register(diagnoseTrafficDropTool);
+  register(getContentDecayTool);
   register(getGoogleAnalyticsOrganicLandingPagesTool);
   register(getGoogleAnalyticsPagePerformanceTool);
   register(getGoogleAnalyticsKeyEventsTool);

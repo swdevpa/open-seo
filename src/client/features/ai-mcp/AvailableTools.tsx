@@ -166,6 +166,11 @@ const toolCategories: ToolCategory[] = [
         description:
           "Compare two periods and rank the likely causes of lost clicks.",
       },
+      {
+        name: "get_content_decay",
+        title: "Get content decay",
+        description: "Find pages that lost clicks every month for a while.",
+      },
     ],
   },
   {

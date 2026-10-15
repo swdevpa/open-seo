@@ -36,10 +36,14 @@ import {
 } from "@/types/schemas/search-performance";
 import { saveKeywords } from "@/serverFunctions/keywords";
 
-export type Tab = "striking" | "queries" | "pages";
+export type Tab = "striking" | "queries" | "pages" | "decay";
 export type ExportTarget = "csv" | "sheets";
 
-type ExportTable = { filename: string; headers: string[]; rows: CsvValue[][] };
+type ExportTable = {
+  filename: string;
+  headers: string[];
+  rows: CsvValue[][];
+};
 
 function strikingExportTable(report: Report): ExportTable {
   const stamp = `${report.range.startDate}-to-${report.range.endDate}`;
@@ -81,7 +85,7 @@ function dimensionExportTable(
   };
 }
 
-function runExport(table: ExportTable, target: ExportTarget): void {
+export function runExport(table: ExportTable, target: ExportTarget): void {
   if (target === "csv") {
     downloadCsv(table.filename, buildCsv(table.headers, table.rows));
     captureClientEvent("data:export", {

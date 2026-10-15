@@ -6,6 +6,7 @@ import {
 } from "@/server/features/ga4/services/Ga4ReportingService";
 import { Ga4ReportError } from "@/server/lib/ga4Errors";
 import { Ga4ConnectionRepository } from "@/server/features/ga4/repositories/Ga4ConnectionRepository";
+import { normalizePageKey } from "@/server/lib/pageKey";
 import { ga4DateInTimeZone, shiftGa4Date } from "./Ga4Dates";
 
 type SearchOpportunityInput = {
@@ -54,26 +55,6 @@ function resolveCombinedDates(
     };
   }
   return resolveGa4DateRange(input, propertyTimeZone, now).resolvedDateRange;
-}
-
-export function normalizePageKey(value: string): string | null {
-  const trimmed = value.trim();
-  if (!trimmed || trimmed === "(not set)") return null;
-  try {
-    const url = new URL(
-      trimmed.includes("://") ? trimmed : `https://${trimmed}`,
-    );
-    let host = url.hostname.toLowerCase();
-    const defaultPort =
-      (url.protocol === "http:" && url.port === "80") ||
-      (url.protocol === "https:" && url.port === "443");
-    if (url.port && !defaultPort) host += `:${url.port}`;
-    let path = url.pathname || "/";
-    if (path.length > 1) path = path.replace(/\/+$/, "");
-    return `${host}${path}`;
-  } catch {
-    return null;
-  }
 }
 
 function numberField(

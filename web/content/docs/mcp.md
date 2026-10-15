@@ -125,6 +125,7 @@ OpenSEO MCP exposes tools for SEO research workflows:
 - Read first-party Google Search Console performance (clicks, impressions, CTR, position).
 - Inspect index status, crawl, and canonical for specific URLs (up to 10 per call).
 - Diagnose an organic traffic drop: compare two periods in Search Console, check the losing pages against the latest site audit and Google Analytics, and rank the likely causes.
+- Find decaying content: pages whose Search Console clicks fell month after month, with their top query and position.
 - Enable IndexNow for a project and get the key file your agent should publish on the site.
 - Submit new or updated URLs to IndexNow so Bing and other participating search engines recrawl them.
 

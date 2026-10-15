@@ -10,7 +10,12 @@ import { buildDashboardUrl } from "@/server/mcp/urls";
 import { hasSelfHostedGoogleOAuthConfig } from "@/server/features/google/oauth-config";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { GscService } from "@/server/features/gsc/services/GscService";
+import { ContentDecayService } from "@/server/features/gsc/services/ContentDecayService";
 import { TrafficDropService } from "@/server/features/gsc/services/TrafficDropService";
+import {
+  CONTENT_DECAY_DEFAULT_MONTHS,
+  CONTENT_DECAY_MAX_MONTHS,
+} from "@/types/schemas/search-performance";
 import {
   GSC_DATE_RANGES,
   GSC_DEFAULT_ROW_LIMIT,
@@ -538,6 +543,122 @@ export const diagnoseTrafficDropTool = {
         text: lines.join("\n"),
         meta,
         structuredContent: { ok: true, ...diagnosis },
+      });
+    } catch (error) {
+      const isNotConnected = error instanceof GscNotConnectedError;
+      return mcpResponse({
+        text: `${describeGscError(error)}${isNotConnected ? ` Connect it here: ${connectUrl}` : ` (reconnect at ${connectUrl})`}`,
+        meta,
+        structuredContent: {
+          ok: false,
+          reason: isNotConnected ? "not_connected" : "api_error",
+          connectUrl,
+        },
+      });
+    }
+  }),
+};
+
+// ---------------------------------------------------------------------------
+// get_content_decay
+// ---------------------------------------------------------------------------
+
+const decayInputSchema = {
+  projectId: projectIdSchema,
+  months: z
+    .number()
+    .int()
+    .min(2)
+    .max(CONTENT_DECAY_MAX_MONTHS)
+    .optional()
+    .describe(
+      `Number of consecutive complete months a page must have lost clicks in (default ${CONTENT_DECAY_DEFAULT_MONTHS}). Each is compared with the month before it.`,
+    ),
+} as const;
+
+type DecayArgs = z.infer<z.ZodObject<typeof decayInputSchema>>;
+
+export const getContentDecayTool = {
+  name: "get_content_decay",
+  config: {
+    title: "Get content decay",
+    description:
+      "List pages whose Search Console clicks fell in every one of the last N complete calendar months (default 3), each compared with the month before. Each row has the monthly click series (oldest first), total click loss, current average position, top query over the window, and the latest site audit's word count when an audit exists. Pages under 10 clicks in the baseline month are skipped as noise. Use it to pick pages to refresh. Read-only; uses no credits.",
+    inputSchema: decayInputSchema,
+    outputSchema: {
+      ok: z.boolean(),
+      reason: z.string().optional(),
+      connectUrl: z.string().optional(),
+      setupDocsUrl: z.string().optional(),
+      months: z.array(z.string()).optional(),
+      totalDecaying: z.number().optional(),
+      auditAvailable: z.boolean().optional(),
+      rows: z
+        .array(
+          z
+            .object({
+              page: z.string(),
+              monthlyClicks: z.array(z.number()),
+              totalLoss: z.number(),
+              position: z.number().nullable(),
+              topQuery: z.string().nullable(),
+              wordCount: z.number().nullable(),
+            })
+            .passthrough(),
+        )
+        .optional(),
+      ...optionalMetaOutputSchema,
+    },
+    annotations: {
+      readOnlyHint: true,
+      openWorldHint: true,
+      destructiveHint: false,
+    },
+  },
+  handler: withMcpProjectAuth(async (args: DecayArgs, context) => {
+    const blocked = await missingSelfHostedGoogleClientResponse(
+      context,
+      args.projectId,
+    );
+    if (blocked) return blocked;
+
+    const connectUrl = connectGscUrl(context.baseUrl, args.projectId);
+    const meta = buildProjectMeta(
+      context,
+      args.projectId,
+      `/p/${args.projectId}/search-performance`,
+    );
+
+    try {
+      const report = await ContentDecayService.getContentDecay(args);
+      const header = `${report.totalDecaying} page(s) lost clicks every month across ${report.months.join(", ")} (baseline ${report.months[0] ?? ""}).`;
+      const table = formatMcpTable(report.rows.slice(0, TEXT_SUMMARY_ROWS), [
+        { header: "page", value: (row) => row.page },
+        {
+          header: "clicks by month",
+          value: (row) => row.monthlyClicks.join(" → "),
+        },
+        { header: "loss", value: (row) => row.totalLoss },
+        {
+          header: "position",
+          value: (row) => row.position,
+          format: (value) =>
+            typeof value === "number" ? value.toFixed(1) : "—",
+        },
+        { header: "top query", value: (row) => row.topQuery ?? "—" },
+        { header: "words", value: (row) => row.wordCount ?? "—" },
+      ]);
+      const notes = report.auditAvailable
+        ? []
+        : ["No site audit exists, so word counts are missing."];
+      return mcpResponse({
+        text: [
+          header,
+          ...(report.rows.length > 0 ? [table] : []),
+          ...notes,
+        ].join("\n"),
+        meta,
+        structuredContent: { ok: true, ...report },
       });
     } catch (error) {
       const isNotConnected = error instanceof GscNotConnectedError;

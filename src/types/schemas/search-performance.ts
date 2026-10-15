@@ -61,3 +61,18 @@ export const searchPerformanceTableExportInputSchema = z.object({
   ...searchPerformanceFilterShape,
   dimension: z.enum(SEARCH_PERFORMANCE_TABLE_DIMENSIONS),
 });
+
+/** Content decay compares complete calendar months, not a date range. */
+export const CONTENT_DECAY_MONTHS = [2, 3, 6] as const;
+export const CONTENT_DECAY_DEFAULT_MONTHS = 3;
+export const CONTENT_DECAY_MAX_MONTHS = 12;
+
+export const contentDecayInputSchema = z.object({
+  projectId: z.string().min(1),
+  months: z
+    .number()
+    .int()
+    .min(2)
+    .max(CONTENT_DECAY_MAX_MONTHS)
+    .default(CONTENT_DECAY_DEFAULT_MONTHS),
+});

@@ -1,7 +1,7 @@
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import { Ga4ConnectionRepository } from "@/server/features/ga4/repositories/Ga4ConnectionRepository";
 import { Ga4ReportingService } from "@/server/features/ga4/services/Ga4ReportingService";
-import { normalizePageKey } from "@/server/features/ga4/services/SearchOpportunityService";
+import { normalizePageKey } from "@/server/lib/pageKey";
 import { resolveDateRange } from "@/server/features/gsc/searchAnalytics";
 import {
   previousPeriod,

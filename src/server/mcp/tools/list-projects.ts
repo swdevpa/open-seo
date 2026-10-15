@@ -10,7 +10,7 @@ export const listProjectsTool = {
   config: {
     title: "List projects",
     description:
-      "Lists all projects in the user's organization. Uses no credits — does not call DataForSEO. Use this whenever you need a `projectId` for another OpenSEO tool. Returns an array of {id, name, domain, locationCode, languageCode}; pass the `id` value as `projectId`. locationCode/languageCode are the project's default market — tools fall back to them when a call omits location/language args.",
+      "Lists all projects in the user's organization. Uses no credits — does not call DataForSEO. Use this whenever you need a `projectId` for another OpenSEO tool. Returns an array of {id, name, domain, locationCode, languageCode, indexNowKey}; pass the `id` value as `projectId`. indexNowKey is null until IndexNow is enabled (see enable_indexnow). locationCode/languageCode are the project's default market — tools fall back to them when a call omits location/language args.",
     inputSchema: {} as Record<string, never>,
     outputSchema: {
       projects: z.array(
@@ -21,6 +21,7 @@ export const listProjectsTool = {
             domain: z.string().nullable().optional(),
             locationCode: z.number(),
             languageCode: z.string(),
+            indexNowKey: z.string().nullable(),
             url: z.string(),
           })
           .passthrough(),
@@ -56,6 +57,7 @@ export const listProjectsTool = {
           domain: p.domain,
           locationCode: p.locationCode,
           languageCode: p.languageCode,
+          indexNowKey: p.indexNowKey,
           url: buildDashboardUrl(baseUrl, `/p/${p.id}`),
         })),
       },

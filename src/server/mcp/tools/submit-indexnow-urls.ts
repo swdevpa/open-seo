@@ -27,7 +27,7 @@ export const submitIndexNowUrlsTool = {
   config: {
     title: "Submit URLs to IndexNow",
     description:
-      "Notify IndexNow search engines (Bing, Yandex, Seznam, Naver, and others) that pages were added, updated, or deleted, so they recrawl them quickly. Uses no credits. Requires a project domain and IndexNow enabled in project settings with the key file published on the site. URLs outside the project's domain are skipped and listed in rejectedUrls. Each result reports the host's HTTP status: 200 and 202 mean accepted, 403 and 422 usually mean the key file is missing or wrong. Ask the user before submitting large batches.",
+      "Notify IndexNow search engines (Bing, Yandex, Seznam, Naver, and others) that pages were added, updated, or deleted, so they recrawl them quickly. Uses no credits. Requires a project domain and IndexNow enabled (in project settings or with enable_indexnow) with the key file published on the site. URLs outside the project's domain are skipped and listed in rejectedUrls. Each result reports the host's HTTP status: 200 and 202 mean accepted, 403 and 422 usually mean the key file is missing or wrong. Ask the user before submitting large batches.",
     inputSchema,
     outputSchema: {
       submittedCount: z.number(),

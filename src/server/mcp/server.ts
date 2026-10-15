@@ -35,6 +35,7 @@ import {
   getSearchOpportunitiesTool,
 } from "@/server/mcp/tools/google-analytics-tools";
 import { createProjectTool } from "@/server/mcp/tools/create-project";
+import { enableIndexNowTool } from "@/server/mcp/tools/enable-indexnow";
 import { listProjectsTool } from "@/server/mcp/tools/list-projects";
 import { listSavedKeywordsTool } from "@/server/mcp/tools/list-saved-keywords";
 import {
@@ -185,6 +186,7 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(getAuditStatusTool);
   register(getAuditIssuesTool);
   register(getAuditPagesTool);
+  register(enableIndexNowTool);
   register(submitIndexNowUrlsTool);
   register(runContentOptimizationTool);
   register(getContentOptimizationTool);

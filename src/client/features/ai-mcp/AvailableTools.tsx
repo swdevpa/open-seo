@@ -160,6 +160,12 @@ const toolCategories: ToolCategory[] = [
     label: "Indexing",
     tools: [
       {
+        name: "enable_indexnow",
+        title: "Enable IndexNow",
+        description:
+          "Turn on IndexNow for a project and get the key file to publish on the site.",
+      },
+      {
         name: "submit_indexnow_urls",
         title: "Submit URLs to IndexNow",
         description:

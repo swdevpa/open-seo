@@ -18,7 +18,21 @@ Managed OAuth is required for MCP clients and is not enabled by default.
    - Add HTTPS redirect URIs for web connectors (a path may end in `/*`).
    - Without this, clients can't finish [Dynamic Client Registration](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/managed-oauth/)
      and log in but expose no tools.
-7. Save.
+7. Still in `Managed OAuth settings`, set how long an MCP login lasts:
+   - `Grant session duration`: how long the client's refresh token stays
+     valid, for example 2–4 weeks. If you leave it unset, it falls back to the
+     application session duration (24 hours by default), and agents have to
+     log in again every day.
+   - `Access token lifetime`: keep it short, for example 15 minutes. Clients
+     refresh it silently, and Access re-checks your policies on each refresh.
+8. Save.
+
+The [global session duration](https://developers.cloudflare.com/cloudflare-one/access-controls/access-settings/session-management/#global-session-duration)
+(`Access controls` -> `Access settings`) also limits how long a login lasts.
+It defaults to the application session timeout. If MCP clients still have to
+log in again daily, raise it to at least the grant session duration. It
+applies to every Access application in the account. Clients that connected
+before the change keep their old session until they log in again.
 
 MCP clients should connect to:
 

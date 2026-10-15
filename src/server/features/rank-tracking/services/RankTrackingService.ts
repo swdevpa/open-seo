@@ -124,6 +124,10 @@ async function createConfig(input: {
     isActive: true,
     lastCheckedAt: null,
     lastSkipReason: null,
+    alertWebhookUrl: null,
+    alertPositionDrop: null,
+    alertLeftTop10: false,
+    alertEnteredTop3: false,
     createdAt: toSqliteTimestamp(new Date()),
   };
 

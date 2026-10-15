@@ -118,6 +118,7 @@ OpenSEO MCP exposes tools for SEO research workflows:
 - List saved keywords from an OpenSEO project.
 - Save useful keywords back to OpenSEO.
 - Read rank tracker configs and latest keyword positions.
+- Set webhook alerts for a rank tracker (big position drops, falling out of the top 10, entering the top 3).
 - Summarize a domain's organic footprint.
 - Find keywords a domain already ranks for.
 - Check backlink and referring-domain overview data.

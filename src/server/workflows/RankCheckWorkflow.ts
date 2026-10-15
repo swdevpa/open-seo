@@ -8,6 +8,7 @@ import { withPgClient } from "@/db";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { failRunIfActive } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
+import { RankAlertService } from "@/server/features/rank-tracking/services/RankAlertService";
 import {
   runLiveCheck,
   runQueuedCheck,
@@ -375,6 +376,19 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           queueStats,
         }),
       );
+
+      // Webhook alerts are for unattended runs; a manual check shows its
+      // results in the UI. sendRunAlerts never throws, so a failed delivery
+      // can't flip a completed run to failed.
+      if (trigger === "scheduled") {
+        await pgStep(
+          step,
+          "send-alerts",
+          SINGLE_ATTEMPT_STEP_CONFIG,
+          async () =>
+            RankAlertService.sendRunAlerts({ runId, configId, projectId }),
+        );
+      }
     } catch (error) {
       console.error(`Rank check ${runId} failed:`, error);
       await pgStep(step, "mark-failed", SINGLE_ATTEMPT_STEP_CONFIG, async () =>

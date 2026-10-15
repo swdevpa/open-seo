@@ -51,6 +51,12 @@ const toolCategories: ToolCategory[] = [
         description: "Check a tracker's current positions now.",
       },
       {
+        name: "set_rank_tracker_alerts",
+        title: "Set rank tracker alerts",
+        description:
+          "Post ranking changes to a webhook after scheduled checks.",
+      },
+      {
         name: "get_keyword_metrics",
         title: "Get keyword metrics",
         description:

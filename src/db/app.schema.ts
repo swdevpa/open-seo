@@ -234,6 +234,16 @@ export const rankTrackingConfigs = sqliteTable(
     lastCheckedAt: text("last_checked_at"),
     nextCheckAt: text("next_check_at"),
     lastSkipReason: text("last_skip_reason"),
+    // Optional webhook alerts, evaluated after each scheduled run. A null
+    // webhook URL disables alerts; a null position drop disables that rule.
+    alertWebhookUrl: text("alert_webhook_url"),
+    alertPositionDrop: integer("alert_position_drop"),
+    alertLeftTop10: integer("alert_left_top_10", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    alertEnteredTop3: integer("alert_entered_top_3", { mode: "boolean" })
+      .notNull()
+      .default(false),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(current_timestamp)`),

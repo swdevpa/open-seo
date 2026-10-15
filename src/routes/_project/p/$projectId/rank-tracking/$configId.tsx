@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getRankTrackingConfigs } from "@/serverFunctions/rank-tracking";
 import { RankTrackingDomainDetail } from "@/client/features/rank-tracking/RankTrackingDomainDetail";
 import { RankTrackingConfigModal } from "@/client/features/rank-tracking/RankTrackingConfigModal";
+import { RankTrackingAlertSettings } from "@/client/features/rank-tracking/RankTrackingAlertSettings";
 
 export const Route = createFileRoute(
   "/_project/p/$projectId/rank-tracking/$configId",
@@ -69,6 +70,14 @@ function RankTrackingConfigRoute() {
         onBack={handleBack}
         onEdit={() => setShowConfigModal(true)}
       />
+
+      <div className="mt-6">
+        <RankTrackingAlertSettings
+          config={config}
+          projectId={projectId}
+          onSaved={invalidateConfigs}
+        />
+      </div>
 
       {showConfigModal && (
         <RankTrackingConfigModal

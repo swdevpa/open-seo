@@ -2,7 +2,10 @@ import type { InferSelectModel } from "drizzle-orm";
 import { z } from "zod";
 import { rankTrackingConfigs } from "@/db/schema";
 import { isSupportedLanguageCode } from "@/shared/keyword-locations";
-import { MAX_TRACKED_KEYWORD_LENGTH } from "@/shared/rank-tracking";
+import {
+  MAX_TRACKED_KEYWORD_LENGTH,
+  rankAlertSettingsSchema,
+} from "@/shared/rank-tracking";
 import { domainField } from "@/types/schemas/domain";
 
 // ---------------------------------------------------------------------------
@@ -152,4 +155,14 @@ export const getPositionMatrixSchema = z.object({
   configId: z.string().uuid(),
   device: deviceEnum,
   runLimit: z.number().int().positive().max(26).default(12),
+});
+
+export const updateAlertsSchema = rankAlertSettingsSchema.extend({
+  projectId: z.string().uuid(),
+  configId: z.string().uuid(),
+});
+
+export const sendTestAlertSchema = z.object({
+  projectId: z.string().uuid(),
+  configId: z.string().uuid(),
 });

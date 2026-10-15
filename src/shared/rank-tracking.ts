@@ -3,6 +3,7 @@ import {
   SEO_DATA_COST_MARKUP,
   roundUsdForBilling,
 } from "./billing";
+import { z } from "zod";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 
 // ---------------------------------------------------------------------------
@@ -243,3 +244,16 @@ export function scheduleLabel(
 export function devicesCount(devices: RankTrackingConfig["devices"]): number {
   return devices === "both" ? 2 : 1;
 }
+
+// ---------------------------------------------------------------------------
+// Webhook alerts
+// ---------------------------------------------------------------------------
+
+export const RANK_ALERT_DEFAULT_POSITION_DROP = 5;
+
+export const rankAlertSettingsSchema = z.object({
+  webhookUrl: z.string().url().max(2048).nullable(),
+  positionDrop: z.number().int().min(1).max(100).nullable(),
+  leftTop10: z.boolean(),
+  enteredTop3: z.boolean(),
+});

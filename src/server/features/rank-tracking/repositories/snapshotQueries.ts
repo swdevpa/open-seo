@@ -9,6 +9,7 @@ import {
   lte,
   max,
   min,
+  ne,
   sql,
 } from "drizzle-orm";
 import { db } from "@/db";
@@ -146,7 +147,11 @@ export async function getPositionMatrix(
  */
 export async function getSnapshotsForConfig(
   configId: string,
-  opts: { beforeDate?: string; order: "latest" | "earliest" },
+  opts: {
+    beforeDate?: string;
+    excludeRunId?: string;
+    order: "latest" | "earliest";
+  },
 ) {
   const completedRunIds = db
     .select({ id: rankCheckRuns.id })
@@ -155,6 +160,7 @@ export async function getSnapshotsForConfig(
       and(
         eq(rankCheckRuns.configId, configId),
         eq(rankCheckRuns.status, "completed"),
+        opts.excludeRunId ? ne(rankCheckRuns.id, opts.excludeRunId) : undefined,
       ),
     );
 
@@ -202,6 +208,15 @@ export async function getSnapshotsForConfig(
 
 export async function getLatestSnapshotsForKeywords(configId: string) {
   return getSnapshotsForConfig(configId, { order: "latest" });
+}
+
+/** Latest snapshot per keyword+device from every completed run except
+ *  `runId` — the baseline a finished run is compared against for alerts. */
+export async function getSnapshotsBeforeRun(configId: string, runId: string) {
+  return getSnapshotsForConfig(configId, {
+    excludeRunId: runId,
+    order: "latest",
+  });
 }
 
 export async function getSnapshotsBeforeDate(

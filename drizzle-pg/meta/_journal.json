@@ -162,6 +162,13 @@
       "when": 1792090300620,
       "tag": "0022_indexnow_key",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792093507003,
+      "tag": "0023_rank_tracker_alerts",
+      "breakpoints": true
     }
   ]
 }

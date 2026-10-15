@@ -21,6 +21,7 @@ import { estimateRankTrackerCostTool } from "@/server/mcp/tools/estimate-rank-tr
 import { getRankTrackerTool } from "@/server/mcp/tools/get-rank-tracker";
 import { removeRankTrackingKeywordsTool } from "@/server/mcp/tools/remove-rank-tracking-keywords";
 import { runRankTrackerTool } from "@/server/mcp/tools/run-rank-tracker";
+import { setRankTrackerAlertsTool } from "@/server/mcp/tools/set-rank-tracker-alerts";
 import { getSerpResultsTool } from "@/server/mcp/tools/get-serp-results";
 import {
   getGoogleAnalyticsAudienceBreakdownTool,
@@ -165,6 +166,7 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(removeRankTrackingKeywordsTool);
   register(estimateRankTrackerCostTool);
   register(runRankTrackerTool);
+  register(setRankTrackerAlertsTool);
   register(getRankedKeywordsTool);
   register(findSerpCompetitorsTool);
   register(searchLocalBusinessesTool);

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { waitUntil } from "cloudflare:workers";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
+import { RankAlertService } from "@/server/features/rank-tracking/services/RankAlertService";
 import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
 import { getLatestResults } from "@/server/features/rank-tracking/services/rankTrackingResults";
 import { AppError, asAppError } from "@/server/lib/errors";
@@ -20,6 +21,8 @@ import {
   getKeywordHistorySchema,
   getConfigTrendSchema,
   getPositionMatrixSchema,
+  updateAlertsSchema,
+  sendTestAlertSchema,
 } from "@/types/schemas/rank-tracking";
 
 export interface RankKeywordHistoryPoint {
@@ -117,6 +120,26 @@ export const updateRankTrackingConfig = createServerFn({ method: "POST" })
       isActive: data.isActive,
     });
     return { success: true };
+  });
+
+export const updateRankTrackingAlerts = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(updateAlertsSchema)
+  .handler(async ({ data, context }) => {
+    await RankAlertService.updateAlerts(data.configId, context.projectId, {
+      webhookUrl: data.webhookUrl,
+      positionDrop: data.positionDrop,
+      leftTop10: data.leftTop10,
+      enteredTop3: data.enteredTop3,
+    });
+    return { success: true };
+  });
+
+export const sendRankTrackingTestAlert = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(sendTestAlertSchema)
+  .handler(async ({ data, context }) => {
+    return RankAlertService.sendTestAlert(data.configId, context.projectId);
   });
 
 export const triggerRankCheck = createServerFn({ method: "POST" })

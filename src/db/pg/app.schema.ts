@@ -238,6 +238,12 @@ export const rankTrackingConfigs = pgTable(
     lastCheckedAt: timestampColumn("last_checked_at"),
     nextCheckAt: timestampColumn("next_check_at"),
     lastSkipReason: text("last_skip_reason"),
+    // Optional webhook alerts, evaluated after each scheduled run. A null
+    // webhook URL disables alerts; a null position drop disables that rule.
+    alertWebhookUrl: text("alert_webhook_url"),
+    alertPositionDrop: integer("alert_position_drop"),
+    alertLeftTop10: boolean("alert_left_top_10").notNull().default(false),
+    alertEnteredTop3: boolean("alert_entered_top_3").notNull().default(false),
     createdAt: timestampColumn("created_at").notNull().default(isoNow),
   },
   (table) => [

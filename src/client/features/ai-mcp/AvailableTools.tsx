@@ -157,6 +157,17 @@ const toolCategories: ToolCategory[] = [
     ],
   },
   {
+    label: "Indexing",
+    tools: [
+      {
+        name: "submit_indexnow_urls",
+        title: "Submit URLs to IndexNow",
+        description:
+          "Ask Bing and other IndexNow search engines to recrawl new or updated pages.",
+      },
+    ],
+  },
+  {
     label: "Google Analytics",
     tools: [
       {

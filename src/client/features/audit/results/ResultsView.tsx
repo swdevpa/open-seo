@@ -13,6 +13,10 @@ import {
 } from "@/client/features/audit/results/IssuesView";
 import { PagesTable } from "@/client/features/audit/results/PagesTable";
 import {
+  countIndexNowEligiblePages,
+  SubmitAuditToIndexNowButton,
+} from "@/client/features/indexnow/SubmitAuditToIndexNowButton";
+import {
   ExportDropdown,
   PerformanceTable,
 } from "@/client/features/audit/results/ResultsTables";
@@ -77,6 +81,13 @@ export function ResultsView({
             hasPerformanceTab={hasPerformanceTab}
             activeTab={activeTab}
             onTabChange={onTabChange}
+            indexNowAction={
+              <SubmitAuditToIndexNowButton
+                projectId={projectId}
+                auditId={audit.id}
+                eligibleCount={countIndexNowEligiblePages(pages)}
+              />
+            }
             onExport={(format) => {
               if (activeTab === "performance") {
                 exportPerformance(lighthouse, pages, format);
@@ -163,6 +174,7 @@ function ResultsHeader({
   hasPerformanceTab,
   activeTab,
   onTabChange,
+  indexNowAction,
   onExport,
 }: {
   issueCount: number;
@@ -171,6 +183,7 @@ function ResultsHeader({
   hasPerformanceTab: boolean;
   activeTab: string;
   onTabChange: (tab: ResultsTab) => void;
+  indexNowAction: ReactNode;
   onExport: (format: "csv" | "json" | "sheets") => void;
 }) {
   const tabs: Array<{ tab: ResultsTab; label: string }> = [
@@ -207,7 +220,10 @@ function ResultsHeader({
         })}
       </div>
 
-      <ExportDropdown onExport={onExport} />
+      <div className="flex items-center gap-1">
+        {indexNowAction}
+        <ExportDropdown onExport={onExport} />
+      </div>
     </div>
   );
 }

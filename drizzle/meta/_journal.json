@@ -309,6 +309,13 @@
       "when": 1787666466215,
       "tag": "0043_dazzling_the_phantom",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "6",
+      "when": 1792090300196,
+      "tag": "0044_indexnow_key",
+      "breakpoints": true
     }
   ]
 }

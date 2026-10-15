@@ -54,6 +54,10 @@ export const projects = sqliteTable(
     // onboarding and reused by every project-scoped data call.
     locationCode: integer("location_code").notNull().default(2840),
     languageCode: text("language_code").notNull().default("en"),
+    // IndexNow key for this project. Its owner hosts it at
+    // https://<domain>/<key>.txt so search engines accept URL submissions.
+    // Null until the user enables IndexNow.
+    indexNowKey: text("indexnow_key"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(current_timestamp)`),

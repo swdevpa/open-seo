@@ -18,6 +18,7 @@ function mapProject(project: {
   domain: string | null;
   locationCode: number;
   languageCode: string;
+  indexNowKey: string | null;
   createdAt: string;
 }) {
   return {
@@ -28,6 +29,8 @@ function mapProject(project: {
     // fall back to these when a call omits locationCode/languageCode).
     locationCode: project.locationCode,
     languageCode: project.languageCode,
+    // Public by design: the owner publishes it at https://<domain>/<key>.txt.
+    indexNowKey: project.indexNowKey,
     createdAt: project.createdAt,
   };
 }

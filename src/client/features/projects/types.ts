@@ -10,5 +10,7 @@ export type ProjectSummary = {
   // Default market for the project's data calls.
   locationCode: number;
   languageCode: string;
+  // Null until IndexNow is enabled in project settings.
+  indexNowKey: string | null;
   createdAt: string;
 };

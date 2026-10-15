@@ -214,6 +214,31 @@ async function archiveProject(projectId: string, organizationId: string) {
   }
 }
 
+// Writes only the IndexNow key column.
+async function updateProjectIndexNowKey(
+  projectId: string,
+  organizationId: string,
+  indexNowKey: string,
+) {
+  const [row] = await db
+    .update(projects)
+    .set({ indexNowKey })
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.organizationId, organizationId),
+        isNull(projects.archivedAt),
+      ),
+    )
+    .returning();
+
+  if (!row) {
+    throw new AppError("NOT_FOUND");
+  }
+
+  return row;
+}
+
 export const ProjectRepository = {
   listProjects,
   listArchivedProjects,
@@ -224,6 +249,7 @@ export const ProjectRepository = {
   updateProject,
   updateProjectDomain,
   updateProjectMarket,
+  updateProjectIndexNowKey,
   tryCreateDefaultProject,
   archiveProject,
   restoreProject,

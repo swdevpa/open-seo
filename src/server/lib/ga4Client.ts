@@ -1,6 +1,6 @@
 /* eslint-disable max-lines -- one client module per Google integration (gscClient precedent); GA4 spans the Admin and Data APIs */
 import { z } from "zod";
-import { getAuth } from "@/lib/auth";
+import { mintGoogleAccessToken } from "@/server/lib/googleAccessToken";
 import {
   Ga4AdminApiError,
   Ga4DataApiError,
@@ -127,14 +127,12 @@ async function getGa4AccessToken(opts: {
   userId: string;
   ga4AccountId: string;
 }): Promise<string> {
-  let result: { accessToken?: string } | undefined;
+  let accessToken: string | undefined;
   try {
-    result = await getAuth().api.getAccessToken({
-      body: {
-        providerId: GA4_OAUTH_PROVIDER_ID,
-        userId: opts.userId,
-        accountId: opts.ga4AccountId,
-      },
+    accessToken = await mintGoogleAccessToken({
+      providerId: GA4_OAUTH_PROVIDER_ID,
+      userId: opts.userId,
+      accountId: opts.ga4AccountId,
     });
   } catch (error) {
     throw new Ga4TokenError(
@@ -142,10 +140,10 @@ async function getGa4AccessToken(opts: {
       error,
     );
   }
-  if (!result?.accessToken) {
+  if (!accessToken) {
     throw new Ga4TokenError("Google Analytics returned no access token.");
   }
-  return result.accessToken;
+  return accessToken;
 }
 
 function adminMessageForStatus(status: number): string {

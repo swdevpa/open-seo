@@ -1,5 +1,5 @@
-import { getAuth } from "@/lib/auth";
 import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
+import { mintGoogleAccessToken } from "./googleAccessToken";
 import { GscApiError, GscTokenError } from "./gscErrors";
 
 export { GscApiError, GscTokenError } from "./gscErrors";
@@ -85,18 +85,12 @@ export function createGscClient(opts: {
   gscAccountId?: string;
 }) {
   async function getToken(): Promise<string> {
-    let result: { accessToken?: string } | undefined;
+    let accessToken: string | undefined;
     try {
-      // Headerless call: getAccessToken trusts body.userId when no request
-      // session is present, and auto-refreshes via the genericOAuth provider.
-      // Works in every auth mode — self-hosted builds the same Better Auth
-      // instance once BETTER_AUTH_SECRET is set.
-      result = await getAuth().api.getAccessToken({
-        body: {
-          providerId: GSC_OAUTH_PROVIDER_ID,
-          userId: opts.userId,
-          ...(opts.gscAccountId ? { accountId: opts.gscAccountId } : {}),
-        },
+      accessToken = await mintGoogleAccessToken({
+        providerId: GSC_OAUTH_PROVIDER_ID,
+        userId: opts.userId,
+        accountId: opts.gscAccountId,
       });
     } catch (error) {
       throw new GscTokenError(
@@ -104,12 +98,12 @@ export function createGscClient(opts: {
         error,
       );
     }
-    if (!result?.accessToken) {
+    if (!accessToken) {
       throw new GscTokenError(
         "Search Console returned no access token (grant revoked or expired).",
       );
     }
-    return result.accessToken;
+    return accessToken;
   }
 
   async function request<T>(

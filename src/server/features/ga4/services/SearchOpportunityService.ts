@@ -56,7 +56,7 @@ function resolveCombinedDates(
   return resolveGa4DateRange(input, propertyTimeZone, now).resolvedDateRange;
 }
 
-function normalizePageKey(value: string): string | null {
+export function normalizePageKey(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed || trimmed === "(not set)") return null;
   try {

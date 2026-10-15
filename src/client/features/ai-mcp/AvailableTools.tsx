@@ -154,6 +154,12 @@ const toolCategories: ToolCategory[] = [
         description:
           "Check index status, crawl, and canonical for up to 10 URLs.",
       },
+      {
+        name: "diagnose_traffic_drop",
+        title: "Diagnose traffic drop",
+        description:
+          "Compare two periods and rank the likely causes of lost clicks.",
+      },
     ],
   },
   {

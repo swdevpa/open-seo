@@ -297,6 +297,8 @@ async function getPagesForAudit(auditId: string) {
       redirectUrl: auditPages.redirectUrl,
       title: auditPages.title,
       metaDescription: auditPages.metaDescription,
+      canonicalUrl: auditPages.canonicalUrl,
+      headerCanonicalUrl: auditPages.headerCanonicalUrl,
       wordCount: auditPages.wordCount,
       isIndexable: auditPages.isIndexable,
       crawlDepth: auditPages.crawlDepth,

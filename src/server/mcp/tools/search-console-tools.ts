@@ -10,6 +10,7 @@ import { buildDashboardUrl } from "@/server/mcp/urls";
 import { hasSelfHostedGoogleOAuthConfig } from "@/server/features/google/oauth-config";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { GscService } from "@/server/features/gsc/services/GscService";
+import { TrafficDropService } from "@/server/features/gsc/services/TrafficDropService";
 import {
   GSC_DATE_RANGES,
   GSC_DEFAULT_ROW_LIMIT,
@@ -393,6 +394,150 @@ export const inspectUrlsTool = {
         text,
         meta,
         structuredContent: { ok: true, siteUrl, results },
+      });
+    } catch (error) {
+      const isNotConnected = error instanceof GscNotConnectedError;
+      return mcpResponse({
+        text: `${describeGscError(error)}${isNotConnected ? ` Connect it here: ${connectUrl}` : ` (reconnect at ${connectUrl})`}`,
+        meta,
+        structuredContent: {
+          ok: false,
+          reason: isNotConnected ? "not_connected" : "api_error",
+          connectUrl,
+        },
+      });
+    }
+  }),
+};
+
+// ---------------------------------------------------------------------------
+// diagnose_traffic_drop
+// ---------------------------------------------------------------------------
+
+const diagnoseInputSchema = {
+  projectId: projectIdSchema,
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .describe(
+      "Start of the period to diagnose (YYYY-MM-DD, Pacific Time). Use with endDate. Default: the last 28 days of complete data.",
+    ),
+  endDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .describe(
+      "End of the period to diagnose (YYYY-MM-DD). Use with startDate.",
+    ),
+} as const;
+
+type DiagnoseArgs = z.infer<z.ZodObject<typeof diagnoseInputSchema>>;
+
+const lossRowOutputSchema = z
+  .object({
+    key: z.string(),
+    clickChange: z.number(),
+    impressionChange: z.number(),
+    positionDropped: z.boolean(),
+    reason: z.string(),
+  })
+  .passthrough();
+
+function formatChange(value: number | null): string {
+  return value === null
+    ? "n/a"
+    : `${value >= 0 ? "+" : ""}${value.toFixed(0)}%`;
+}
+
+export const diagnoseTrafficDropTool = {
+  name: "diagnose_traffic_drop",
+  config: {
+    title: "Diagnose an organic traffic drop",
+    description:
+      "Compare a period with the equal-length previous period in Search Console and explain a traffic drop: queries and pages with the largest click/impression losses (flagged as position drop, no longer ranking, demand drop, or CTR drop), the latest site audit status of the top losing pages (noindex, non-200, canonicalized, blocked), their GA4 organic session change when Analytics is connected, and a ranked list of likely causes with evidence. Missing GA4 or audit data is reported in diagnostics. Read-only; uses no credits.",
+    inputSchema: diagnoseInputSchema,
+    outputSchema: {
+      ok: z.boolean(),
+      reason: z.string().optional(),
+      connectUrl: z.string().optional(),
+      setupDocsUrl: z.string().optional(),
+      currentPeriod: z
+        .object({ startDate: z.string(), endDate: z.string() })
+        .optional(),
+      previousPeriod: z
+        .object({ startDate: z.string(), endDate: z.string() })
+        .optional(),
+      totals: z.object({}).passthrough().optional(),
+      causes: z
+        .array(
+          z.object({
+            cause: z.string(),
+            weight: z.number(),
+            evidence: z.array(z.string()),
+          }),
+        )
+        .optional(),
+      losingQueries: z.array(lossRowOutputSchema).optional(),
+      losingPages: z.array(lossRowOutputSchema).optional(),
+      pageChecks: z.array(z.object({}).passthrough()).optional(),
+      diagnostics: z.array(z.string()).optional(),
+      ...optionalMetaOutputSchema,
+    },
+    annotations: {
+      readOnlyHint: true,
+      openWorldHint: true,
+      destructiveHint: false,
+    },
+  },
+  handler: withMcpProjectAuth(async (args: DiagnoseArgs, context) => {
+    const blocked = await missingSelfHostedGoogleClientResponse(
+      context,
+      args.projectId,
+    );
+    if (blocked) return blocked;
+
+    const connectUrl = connectGscUrl(context.baseUrl, args.projectId);
+    const meta = buildProjectMeta(
+      context,
+      args.projectId,
+      `/p/${args.projectId}/search-performance`,
+    );
+    if (Boolean(args.startDate) !== Boolean(args.endDate)) {
+      return invalidRequest(
+        meta,
+        "Provide both startDate and endDate, or neither.",
+      );
+    }
+
+    try {
+      const diagnosis = await TrafficDropService.diagnose(args);
+      const { totals } = diagnosis;
+      const lines = [
+        `${diagnosis.currentPeriod.startDate}→${diagnosis.currentPeriod.endDate} vs ${diagnosis.previousPeriod.startDate}→${diagnosis.previousPeriod.endDate}: clicks ${totals.previous.clicks}→${totals.current.clicks} (${formatChange(totals.clickChangePercent)}), impressions ${totals.previous.impressions}→${totals.current.impressions} (${formatChange(totals.impressionChangePercent)}), avg position ${totals.previous.position.toFixed(1)}→${totals.current.position.toFixed(1)}.`,
+        ...(diagnosis.causes.length > 0
+          ? [
+              "Likely causes (most likely first):",
+              ...diagnosis.causes.map(
+                (cause, index) =>
+                  `${index + 1}. ${cause.cause} (weight ${cause.weight}): ${cause.evidence[0] ?? ""}`,
+              ),
+            ]
+          : []),
+        "Top losing pages:",
+        ...diagnosis.losingPages
+          .slice(0, 5)
+          .map(
+            (row) =>
+              `  ${row.key}: ${row.clickChange} clicks, ${row.impressionChange} impressions (${row.reason})`,
+          ),
+        ...diagnosis.diagnostics.map((note) => `Note: ${note}`),
+        "Full detail is in structuredContent.",
+      ];
+      return mcpResponse({
+        text: lines.join("\n"),
+        meta,
+        structuredContent: { ok: true, ...diagnosis },
       });
     } catch (error) {
       const isNotConnected = error instanceof GscNotConnectedError;

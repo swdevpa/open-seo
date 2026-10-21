@@ -1,3 +1,26 @@
 minimumReleaseAge: 11520
 minimumReleaseAgeExclude:
   - "@every-app/*"
+
+# Security floors (2026-10) for transitive deps whose parents haven't shipped a
+# bump yet. Major-bounded (^) so an override never forces a new major. Prune a
+# line once the parent catches up and `pnpm audit` stays clean without it.
+overrides:
+  # waiting on @vitejs/plugin-react > @babel/core
+  "@babel/core": "^7.29.6"
+  browserslist: "^4.28.7"
+  baseline-browser-mapping: "^2.11.0"
+  # waiting on fumadocs-core
+  image-size: "^2.0.3"
+  path-to-regexp: "^8.4.0"
+  # waiting on fumadocs-ui
+  postcss-selector-parser: "^7.1.6"
+  # waiting on @tanstack/start-plugin-core > xmlbuilder2
+  js-yaml: "^4.3.2"
+  # waiting on vite
+  postcss: "^8.5.23"
+  "nanoid@^3": "^3.3.18"
+  # waiting on @tailwindcss/node
+  source-map-js: "^1.2.2"
+  # vite 7.3.7 accepts ^0.27 || ^0.28; 0.27.x has a low-severity advisory
+  "vite>esbuild": "^0.28.1"

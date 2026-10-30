@@ -1,3 +1,5 @@
+import { Alert } from "@/client/components/ui/alert";
+import { Button } from "@/client/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
 import {
   keepPreviousData,
@@ -35,7 +37,7 @@ function StatusPill({
       ? "border-success/30 bg-success/10 text-success"
       : status === "reconnect"
         ? "border-warning/30 bg-warning/10 text-warning"
-        : "border-base-300 bg-base-200 text-base-content/65";
+        : "border-border bg-muted text-muted-foreground";
   return (
     <span
       className={`inline-flex rounded-full border px-2 py-1 text-xs font-medium ${className}`}
@@ -149,7 +151,7 @@ export function YoutubeDetailPage({
               to="/p/$projectId/youtube"
               params={{ projectId }}
               search={{ startDate, endDate }}
-              className="mb-3 inline-flex items-center gap-1 text-sm text-base-content/60 hover:text-base-content"
+              className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="size-4" />
               All channels
@@ -162,7 +164,7 @@ export function YoutubeDetailPage({
                   className="size-11 rounded-full object-cover"
                 />
               ) : (
-                <span className="grid size-11 place-items-center rounded-full bg-error/10 text-error">
+                <span className="grid size-11 place-items-center rounded-full bg-destructive/10 text-destructive">
                   <Youtube className="size-5" />
                 </span>
               )}
@@ -174,7 +176,7 @@ export function YoutubeDetailPage({
                   {detail ? <StatusPill status={detail.status} /> : null}
                 </div>
                 {detail?.channelHandle ? (
-                  <p className="text-sm text-base-content/60">
+                  <p className="text-sm text-muted-foreground">
                     {detail.channelHandle}
                   </p>
                 ) : null}
@@ -187,9 +189,11 @@ export function YoutubeDetailPage({
               endDate={endDate}
               onApply={applyRange}
             />
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               type="button"
-              className="btn btn-ghost btn-sm gap-1.5"
+              className="gap-1.5"
               onClick={() =>
                 void queryClient.invalidateQueries({
                   queryKey: [
@@ -208,26 +212,28 @@ export function YoutubeDetailPage({
                 className={`size-4 ${detailQuery.isFetching ? "animate-spin" : ""}`}
               />
               Refresh
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               type="button"
-              className="btn btn-ghost btn-sm gap-1.5 text-error hover:bg-error/10"
+              className="gap-1.5 text-destructive hover:bg-destructive/10"
               onClick={() => disconnectMutation.mutate()}
               disabled={disconnectMutation.isPending}
             >
               <Unplug className="size-4" />
               Disconnect
-            </button>
+            </Button>
           </div>
         </div>
 
         {detailQuery.isError ? (
-          <div className="alert alert-error text-sm">
+          <Alert variant="destructive">
             {getStandardErrorMessage(
               detailQuery.error,
               "Could not load YouTube data.",
             )}
-          </div>
+          </Alert>
         ) : null}
 
         {detailQuery.isPending ? (
@@ -236,32 +242,36 @@ export function YoutubeDetailPage({
               {Array.from({ length: 7 }, (_, index) => (
                 <div
                   key={index}
-                  className="h-24 animate-pulse rounded-xl bg-base-200"
+                  className="h-24 animate-pulse rounded-xl bg-muted"
                 />
               ))}
             </div>
-            <div className="h-96 animate-pulse rounded-xl bg-base-200" />
+            <div className="h-96 animate-pulse rounded-xl bg-muted" />
           </div>
         ) : detail ? (
           <>
             {detail.status === "reconnect" ? (
-              <div className="alert alert-warning flex items-center justify-between gap-3 text-sm">
+              <Alert
+                variant="warning"
+                className="flex items-center justify-between gap-3"
+              >
                 <span>
                   Reconnect this channel to load current YouTube data.
                 </span>
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   type="button"
-                  className="btn btn-warning btn-sm"
                   onClick={connect}
                 >
                   Reconnect
-                </button>
-              </div>
+                </Button>
+              </Alert>
             ) : detail.status === "unavailable" ? (
-              <div className="alert alert-info text-sm">
+              <Alert variant="info">
                 YouTube data is temporarily unavailable. Try Refresh again
                 later.
-              </div>
+              </Alert>
             ) : null}
             <YoutubeKpiCards
               current={detail.current}
@@ -278,7 +288,7 @@ export function YoutubeDetailPage({
           </>
         ) : null}
         {detail?.range ? (
-          <p className="text-xs text-base-content/50">
+          <p className="text-xs text-muted-foreground">
             {detail.range.startDate} to {detail.range.endDate}. YouTube data is
             read-only.
           </p>

@@ -1,135 +1,215 @@
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
-import { isCrawlableUrl } from "@/server/lib/audit/url-policy";
+import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
 import { AppError } from "@/server/lib/errors";
+import { readBoundedText } from "@/server/lib/scrape";
 
-// api.indexnow.org forwards every submission to all participating search
-// engines (Bing, Yandex, Seznam, Naver, Yep, ...), so one request is enough.
-const INDEXNOW_ENDPOINT = "https://api.indexnow.org/indexnow";
-// Protocol limit per request. Callers cap input at this size, so one request
-// per host always fits.
-export const INDEXNOW_MAX_URLS = 10_000;
-const FETCH_TIMEOUT_MS = 10_000;
-const KEY_FILE_REDIRECT_HOPS = 3;
+// IndexNow engines share every submission with each other, so one accepted
+// request reaches all of them. Bing goes first as the largest participant. Bing
+// and some other engines rate-limit shared hosting IPs, including Cloudflare
+// Workers', so a rate limit, server error or timeout moves on to the next one.
+const INDEXNOW_ENDPOINTS = [
+  "https://www.bing.com/indexnow",
+  "https://yandex.com/indexnow",
+  "https://indexnow.yep.com/indexnow",
+];
+const REQUEST_TIMEOUT_MS = 10_000;
+// Protocol limit per request.
+const INDEXNOW_MAX_URLS = 10_000;
 
-type IndexNowHostResult = {
+interface ProjectScope {
+  projectId: string;
+  organizationId: string;
+}
+
+interface IndexNowHostResult {
   host: string;
   urlCount: number;
-  ok: boolean;
-  status: number | null;
+  status: "submitted" | "failed";
   message: string;
-};
+}
 
-type IndexNowSubmission = {
-  submittedCount: number;
-  // URLs outside the project's domain. IndexNow rejects the whole request when
-  // any URL does not belong to the submitted host, so these are dropped.
-  rejectedUrls: string[];
-  results: IndexNowHostResult[];
-};
-
-type ProjectRow = NonNullable<
-  Awaited<ReturnType<typeof ProjectRepository.getProjectForOrganization>>
->;
-
-async function getProject(organizationId: string, projectId: string) {
+async function loadProject(scope: ProjectScope) {
   const project = await ProjectRepository.getProjectForOrganization(
-    projectId,
-    organizationId,
+    scope.projectId,
+    scope.organizationId,
   );
   if (!project) throw new AppError("NOT_FOUND");
   return project;
 }
 
-function requireIndexNowSetup(project: ProjectRow) {
+async function getSetup(scope: ProjectScope) {
+  const project = await loadProject(scope);
+  return { domain: project.domain, key: project.indexnowKey };
+}
+
+/** The project's key, created on first use. The project needs a website. */
+async function setUp(scope: ProjectScope) {
+  const project = await loadProject(scope);
   if (!project.domain) {
     throw new AppError(
       "VALIDATION_ERROR",
-      "Set a project domain before submitting URLs to IndexNow.",
+      "Add the project's website before using IndexNow.",
     );
   }
-  if (!project.indexNowKey) {
-    throw new AppError(
-      "VALIDATION_ERROR",
-      "Enable IndexNow in project settings before submitting URLs.",
-    );
+  if (project.indexnowKey) {
+    return { domain: project.domain, key: project.indexnowKey, created: false };
   }
-  return { domain: project.domain, key: project.indexNowKey };
-}
-
-// 32 hex characters: inside the protocol's 8-128 [a-zA-Z0-9-] range.
-function generateKey() {
-  return crypto.randomUUID().replaceAll("-", "");
-}
-
-async function enableKey(organizationId: string, projectId: string) {
-  const project = await getProject(organizationId, projectId);
-  if (project.indexNowKey) return project.indexNowKey;
-  const row = await ProjectRepository.updateProjectIndexNowKey(
-    projectId,
-    organizationId,
-    generateKey(),
+  await ProjectRepository.setIndexNowKeyIfMissing(
+    scope.projectId,
+    scope.organizationId,
+    crypto.randomUUID().replaceAll("-", ""),
   );
-  return row.indexNowKey;
+  // Re-read: a concurrent first use may have saved its key instead.
+  const saved = await loadProject(scope);
+  if (!saved.indexnowKey) throw new AppError("NOT_FOUND");
+  return { domain: project.domain, key: saved.indexnowKey, created: true };
 }
 
-async function regenerateKey(organizationId: string, projectId: string) {
-  const row = await ProjectRepository.updateProjectIndexNowKey(
-    projectId,
-    organizationId,
-    generateKey(),
-  );
-  return row.indexNowKey;
-}
+type KeyFileStatus =
+  | "found"
+  | "missing"
+  | "wrong_content"
+  | "redirects"
+  // Redirects to the same file on another host, like a bare domain that
+  // forwards everything to www. Its pages live on that other host.
+  | "moved"
+  | "unreachable"
+  // A bot wall, server error, timeout or stalled body: the file may be fine.
+  | "unknown";
 
-function belongsToDomain(host: string, domain: string) {
-  return host === domain || host.endsWith(`.${domain}`);
-}
-
-function groupUrlsByHost(domain: string, urls: string[]) {
-  const byHost = new Map<string, Set<string>>();
-  const rejectedUrls: string[] = [];
-  for (const raw of urls) {
-    let parsed: URL;
-    try {
-      parsed = new URL(raw.trim());
-    } catch {
-      rejectedUrls.push(raw);
-      continue;
-    }
-    const host = parsed.hostname.toLowerCase();
-    if (
-      (parsed.protocol !== "https:" && parsed.protocol !== "http:") ||
-      !belongsToDomain(host, domain)
-    ) {
-      rejectedUrls.push(raw);
-      continue;
-    }
-    parsed.hash = "";
-    const hostUrls = byHost.get(host) ?? new Set<string>();
-    hostUrls.add(parsed.toString());
-    byHost.set(host, hostUrls);
+async function checkKeyFile(host: string, key: string): Promise<KeyFileStatus> {
+  const url = `https://${host}/${key}.txt`;
+  let response: Response;
+  try {
+    response = await fetch(await normalizeAndValidateStartUrl(url), {
+      headers: { "user-agent": "OpenSEO-IndexNow/1.0 (+https://openseo.so)" },
+      redirect: "manual",
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    return error instanceof DOMException && error.name === "TimeoutError"
+      ? "unknown"
+      : "unreachable";
   }
-  return { byHost, rejectedUrls };
+  if (!response.ok) {
+    void response.body?.cancel().catch(() => {});
+    if (response.status === 404 || response.status === 410) return "missing";
+    if (response.status >= 300 && response.status < 400) {
+      const target = URL.parse(response.headers.get("location") ?? "", url);
+      return target &&
+        target.hostname !== host &&
+        target.pathname === `/${key}.txt`
+        ? "moved"
+        : "redirects";
+    }
+    return "unknown";
+  }
+  const body = await readBoundedText(response).catch(() => undefined);
+  if (body === undefined) return "unknown";
+  return body?.trim() === key ? "found" : "wrong_content";
 }
 
-function describeStatus(status: number) {
+/**
+ * Catches the setup mistakes engines would otherwise reject later: a missing
+ * file, a page served in its place, or a redirect (engines want the file
+ * itself). Anything inconclusive returns null and the submission goes ahead.
+ */
+async function findKeyFileProblem(
+  host: string,
+  key: string,
+): Promise<string | null> {
+  switch (await checkKeyFile(host, key)) {
+    case "missing":
+      return `No key file at the root of https://${host}. Upload it there, then try again.`;
+    case "wrong_content":
+      return `The key file on https://${host} should contain only the key.`;
+    case "redirects":
+    case "moved":
+      return `The key file on https://${host} redirects. Upload it to https://${host} itself.`;
+    default:
+      return null;
+  }
+}
+
+/** Where the key file is hosted, for the bare domain and its www host. */
+async function checkKeyFiles(scope: ProjectScope) {
+  const project = await loadProject(scope);
+  const domain = project.domain;
+  const key = project.indexnowKey;
+  if (!domain || !key) return { hosts: [] };
+  const hosts = await Promise.all(
+    [domain, `www.${domain}`].map(async (host) => ({
+      host,
+      status: await checkKeyFile(host, key),
+    })),
+  );
+  return { hosts };
+}
+
+function describeResponse(
+  status: number,
+  urlCount: number,
+  host: string,
+): Pick<IndexNowHostResult, "status" | "message"> {
+  const urls = `${urlCount} URL${urlCount === 1 ? "" : "s"}`;
   switch (status) {
     case 200:
-      return "Submitted.";
+      return { status: "submitted", message: `Submitted ${urls}.` };
     case 202:
-      return "Accepted. Search engines are still validating the key file.";
-    case 400:
-      return "IndexNow rejected the request as malformed.";
+      return {
+        status: "submitted",
+        message: `Submitted ${urls}. Search engines will verify the key file on https://${host} first.`,
+      };
     case 403:
-      return "Key not valid: the key file is missing or its content does not match.";
-    case 422:
-      return "The URLs do not belong to this host, or the key file does not match.";
+      return {
+        status: "failed",
+        message: `The key wasn't accepted. Check that the key file on https://${host} contains only the key.`,
+      };
     case 429:
-      return "Too many requests. Try again later.";
+      return {
+        status: "failed",
+        message:
+          "Search engines are refusing submissions right now. Try again later, and only submit pages that changed.",
+      };
     default:
-      return `IndexNow returned HTTP ${status}.`;
+      return {
+        status: "failed",
+        message: `IndexNow returned HTTP ${status}.`,
+      };
   }
+}
+
+/** The engine's status code, or undefined when it didn't respond. */
+async function postToEngine(
+  endpoint: string,
+  host: string,
+  body: string,
+): Promise<number | undefined> {
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json; charset=utf-8" },
+      body,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    console.warn(
+      `indexnow.submit ${endpoint} network error for ${host}`,
+      error,
+    );
+    return undefined;
+  }
+  if (response.ok) {
+    void response.body?.cancel().catch(() => {});
+  } else {
+    const detail = await readBoundedText(response).catch(() => null);
+    console.warn(
+      `indexnow.submit ${endpoint} HTTP ${response.status} for ${host}: ${detail?.slice(0, 200) ?? ""}`,
+    );
+  }
+  return response.status;
 }
 
 async function submitHost(
@@ -137,65 +217,68 @@ async function submitHost(
   key: string,
   urlList: string[],
 ): Promise<IndexNowHostResult> {
-  try {
-    const response = await fetch(INDEXNOW_ENDPOINT, {
-      method: "POST",
-      headers: { "content-type": "application/json; charset=utf-8" },
-      body: JSON.stringify({
-        host,
-        key,
-        keyLocation: `https://${host}/${key}.txt`,
-        urlList,
-      }),
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-    });
+  const base = { host, urlCount: urlList.length };
+  const problem = await findKeyFileProblem(host, key);
+  if (problem) return { ...base, status: "failed", message: problem };
+
+  const body = JSON.stringify({ host, key, urlList });
+  let status: number | undefined;
+  for (const endpoint of INDEXNOW_ENDPOINTS) {
+    status = await postToEngine(endpoint, host, body);
+    if (status !== undefined && status !== 429 && status < 500) break;
+  }
+  if (status === undefined) {
     return {
-      host,
-      urlCount: urlList.length,
-      ok: response.status === 200 || response.status === 202,
-      status: response.status,
-      message: describeStatus(response.status),
-    };
-  } catch {
-    return {
-      host,
-      urlCount: urlList.length,
-      ok: false,
-      status: null,
-      message: "Could not reach IndexNow. Try again later.",
+      ...base,
+      status: "failed",
+      message: "IndexNow didn't respond. Try again later.",
     };
   }
+  return { ...base, ...describeResponse(status, urlList.length, host) };
 }
 
-async function submitUrls(
-  organizationId: string,
-  projectId: string,
-  urls: string[],
-): Promise<IndexNowSubmission> {
-  const { domain, key } = requireIndexNowSetup(
-    await getProject(organizationId, projectId),
-  );
-  const { byHost, rejectedUrls } = groupUrlsByHost(domain, urls);
-  const results = await Promise.all(
-    [...byHost].map(([host, hostUrls]) => submitHost(host, key, [...hostUrls])),
-  );
-  return {
-    submittedCount: results
-      .filter((result) => result.ok)
-      .reduce((sum, result) => sum + result.urlCount, 0),
-    rejectedUrls,
-    results,
-  };
+/**
+ * Sends URLs on the project's website to IndexNow, one request per host.
+ * URLs off the website are skipped rather than failing the whole call.
+ */
+async function submitUrls(scope: ProjectScope, urls: string[]) {
+  const { domain, key, created } = await setUp(scope);
+
+  const byHost = new Map<string, Set<string>>();
+  const skipped: string[] = [];
+  for (const raw of urls) {
+    const url = URL.parse(raw.trim());
+    const host = url?.hostname ?? "";
+    if (
+      !url ||
+      (url.protocol !== "https:" && url.protocol !== "http:") ||
+      (host !== domain && !host.endsWith(`.${domain}`))
+    ) {
+      skipped.push(raw);
+      continue;
+    }
+    url.hash = "";
+    const hostUrls = byHost.get(host) ?? new Set<string>();
+    hostUrls.add(url.toString());
+    byHost.set(host, hostUrls);
+  }
+
+  const hosts: IndexNowHostResult[] = [];
+  for (const [host, hostUrls] of byHost) {
+    hosts.push(await submitHost(host, key, [...hostUrls]));
+  }
+  return { key, keyCreated: created, hosts, skipped };
 }
 
-// Submits every page of an audit that a search engine should index: fetched
-// successfully, indexable, and not hidden behind bot protection.
-async function submitAuditPages(
-  organizationId: string,
-  projectId: string,
-  auditId: string,
-) {
-  const audit = await AuditRepository.getAuditForProject(auditId, projectId);
+/**
+ * Submits every page of an audit a search engine should index: fetched
+ * successfully, indexable, and not hidden behind bot protection.
+ */
+async function submitAuditPages(scope: ProjectScope, auditId: string) {
+  const audit = await AuditRepository.getAuditForProject(
+    auditId,
+    scope.projectId,
+  );
   if (!audit) throw new AppError("NOT_FOUND");
   const pages = await AuditRepository.getPagesForAudit(auditId);
   const urls = pages
@@ -207,57 +290,13 @@ async function submitAuditPages(
     )
     .map((page) => page.url)
     .slice(0, INDEXNOW_MAX_URLS);
-  return submitUrls(organizationId, projectId, urls);
-}
-
-// Fetches https://<domain>/<key>.txt the way a search engine would, following
-// redirects manually so each hop passes the same SSRF policy as the crawler.
-async function checkKeyFile(organizationId: string, projectId: string) {
-  const { domain, key } = requireIndexNowSetup(
-    await getProject(organizationId, projectId),
-  );
-  let url = `https://${domain}/${key}.txt`;
-  for (let hop = 0; hop <= KEY_FILE_REDIRECT_HOPS; hop += 1) {
-    if (!isCrawlableUrl(url)) {
-      return { ok: false, url, message: "This URL is blocked by policy." };
-    }
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        redirect: "manual",
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      });
-    } catch {
-      return { ok: false, url, message: "Could not reach the key file." };
-    }
-    const location = response.headers.get("location");
-    if (response.status >= 300 && response.status < 400 && location) {
-      url = new URL(location, url).toString();
-      continue;
-    }
-    if (!response.ok) {
-      return {
-        ok: false,
-        url,
-        message: `The key file returned HTTP ${response.status}.`,
-      };
-    }
-    const body = (await response.text()).trim();
-    return body === key
-      ? { ok: true, url, message: "Key file found." }
-      : {
-          ok: false,
-          url,
-          message: "The file exists, but its content is not the key.",
-        };
-  }
-  return { ok: false, url, message: "The key file redirects too many times." };
+  return submitUrls(scope, urls);
 }
 
 export const IndexNowService = {
-  enableKey,
-  regenerateKey,
+  getSetup,
+  setUp,
+  checkKeyFiles,
   submitUrls,
   submitAuditPages,
-  checkKeyFile,
 } as const;

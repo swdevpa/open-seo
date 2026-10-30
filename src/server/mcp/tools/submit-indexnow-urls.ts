@@ -1,23 +1,17 @@
 import { z } from "zod";
-import {
-  INDEXNOW_MAX_URLS,
-  IndexNowService,
-} from "@/server/features/indexnow/services/IndexNowService";
-import { mcpResponse } from "@/server/mcp/formatters";
+import { IndexNowService } from "@/server/features/indexnow/services/IndexNowService";
 import { buildProjectMeta } from "@/server/mcp/context";
+import { mcpResponse } from "@/server/mcp/formatters";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
+import { indexNowUrlsSchema } from "@/types/schemas/indexnow";
 
 const inputSchema = {
   projectId: projectIdSchema,
-  urls: z
-    .array(z.string().min(1).max(2048))
-    .min(1)
-    .max(INDEXNOW_MAX_URLS)
-    .describe(
-      "Absolute URLs on the project's domain or its subdomains to submit (1-10,000).",
-    ),
+  urls: indexNowUrlsSchema.describe(
+    "Absolute URLs on the project's website (any subdomain) that were added, changed, redirected or removed.",
+  ),
 } as const;
 
 type Args = z.infer<z.ZodObject<typeof inputSchema>>;
@@ -27,22 +21,22 @@ export const submitIndexNowUrlsTool = {
   config: {
     title: "Submit URLs to IndexNow",
     description:
-      "Notify IndexNow search engines (Bing, Yandex, Seznam, Naver, and others) that pages were added, updated, or deleted, so they recrawl them quickly. Uses no credits. Requires a project domain and IndexNow enabled (in project settings or with enable_indexnow) with the key file published on the site. URLs outside the project's domain are skipped and listed in rejectedUrls. Each result reports the host's HTTP status: 200 and 202 mean accepted, 403 and 422 usually mean the key file is missing or wrong. Ask the user before submitting large batches.",
+      "Tells Bing, Yandex, Seznam, Naver, Yep and other IndexNow search engines that pages on the project's website changed, so they recrawl them sooner. Google does not use IndexNow. Submit only new, updated, redirected or removed pages, not the whole site. The site must host the project's key file at the root of each host, e.g. https://www.example.com/{key}.txt containing only the key. The first call creates the project's key (keyCreated: true); when a host's result says the key file is missing, create that file on the site and call again. URLs outside the project's website are skipped. Uses no credits.",
     inputSchema,
-    outputSchema: {
-      submittedCount: z.number(),
-      rejectedUrls: z.array(z.string()),
-      results: z.array(
-        z.object({
+    outputSchema: z.looseObject({
+      key: z.string(),
+      keyCreated: z.boolean(),
+      hosts: z.array(
+        z.looseObject({
           host: z.string(),
           urlCount: z.number(),
-          ok: z.boolean(),
-          status: z.number().nullable(),
+          status: z.enum(["submitted", "failed"]),
           message: z.string(),
         }),
       ),
+      skipped: z.array(z.string()),
       ...optionalMetaOutputSchema,
-    },
+    }),
     annotations: {
       readOnlyHint: false,
       openWorldHint: true,
@@ -50,33 +44,34 @@ export const submitIndexNowUrlsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
-    const submission = await IndexNowService.submitUrls(
-      context.auth.organizationId,
-      args.projectId,
+    const result = await IndexNowService.submitUrls(
+      {
+        projectId: args.projectId,
+        organizationId: context.auth.organizationId,
+      },
       args.urls,
     );
-
     const lines = [
-      `Submitted ${submission.submittedCount} of ${args.urls.length} URL(s) to IndexNow.`,
-      ...submission.results.map(
-        (result) =>
-          `${result.host}: ${result.urlCount} URL(s), ${result.status ?? "no response"}, ${result.message}`,
+      result.keyCreated
+        ? `Created this project's IndexNow key: ${result.key}`
+        : `IndexNow key: ${result.key}`,
+      ...result.hosts.map(
+        (host) => `${host.host}: ${host.status}. ${host.message}`,
       ),
-      ...(submission.rejectedUrls.length > 0
+      ...(result.skipped.length > 0
         ? [
-            `Skipped ${submission.rejectedUrls.length} URL(s) outside the project domain.`,
+            `Skipped ${result.skipped.length} URL${result.skipped.length === 1 ? "" : "s"} not on the project's website.`,
           ]
         : []),
     ];
-
     return mcpResponse({
       text: lines.join("\n"),
       meta: buildProjectMeta(
         context,
         args.projectId,
-        `/p/${args.projectId}/settings`,
+        `/p/${args.projectId}/settings/integrations#indexnow`,
       ),
-      structuredContent: submission,
+      structuredContent: result,
     });
   }),
 };

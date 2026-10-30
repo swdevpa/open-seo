@@ -15,7 +15,7 @@ import { responseForAppError } from "@/server/lib/http-errors";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
 import {
   getGoogleOAuthClientConfig,
-  hasSelfHostedGoogleOAuthConfig,
+  hasGoogleOAuthConfig,
 } from "@/server/features/google/oauth-config";
 import {
   YOUTUBE_OAUTH_PROVIDER_ID,
@@ -155,7 +155,7 @@ export async function createYoutubeAuthorizationUrl(input: {
   publicOrigin: string;
 }): Promise<string> {
   const config = await getGoogleOAuthClientConfig();
-  if (!config || !(await hasSelfHostedGoogleOAuthConfig(config))) {
+  if (!config || !(await hasGoogleOAuthConfig(config))) {
     throw new AppError(
       "AUTH_CONFIG_MISSING",
       "YouTube is not configured. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and BETTER_AUTH_SECRET.",

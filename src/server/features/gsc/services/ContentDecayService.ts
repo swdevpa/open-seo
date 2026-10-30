@@ -1,3 +1,4 @@
+import { sort } from "remeda";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import { normalizePageKey } from "@/server/lib/pageKey";
 import { GscService } from "@/server/features/gsc/services/GscService";
@@ -123,7 +124,7 @@ async function getContentDecay(
 
   return {
     months: months.map((month) => month.month),
-    rows: rows.toSorted((a, b) => b.totalLoss - a.totalLoss).slice(0, MAX_ROWS),
+    rows: sort(rows, (a, b) => b.totalLoss - a.totalLoss).slice(0, MAX_ROWS),
     totalDecaying: rows.length,
     auditAvailable: wordCounts !== null,
   };

@@ -1,5 +1,15 @@
 /* eslint-disable max-lines -- The scan form, history, and report state share one page workflow. */
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/client/components/ui/table";
+import { Input } from "@/client/components/ui/input";
+import { Button } from "@/client/components/ui/button";
 import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -73,7 +83,7 @@ function formatDate(value: string): string {
 function statusClass(status: ContentOptimizationTerm["status"]): string {
   if (status === "covered") return "text-success";
   if (status === "weak") return "text-warning";
-  return "text-error";
+  return "text-destructive";
 }
 
 function StatusIcon({ status }: { status: ContentOptimizationTerm["status"] }) {
@@ -84,8 +94,8 @@ function StatusIcon({ status }: { status: ContentOptimizationTerm["status"] }) {
 
 function MetricCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-base-300 bg-base-100 p-3">
-      <div className="text-xs text-base-content/60">{label}</div>
+    <div className="rounded-lg border border-border bg-card p-3">
+      <div className="text-xs text-muted-foreground">{label}</div>
       <div className="mt-1 text-xl font-semibold">{formatNumber(value)}</div>
     </div>
   );
@@ -100,10 +110,14 @@ function coverageLabel(status: "covered" | "weak" | "missing"): string {
 function coverageClass(status: "covered" | "weak" | "missing"): string {
   if (status === "covered") return "text-success";
   if (status === "weak") return "text-warning";
-  return "text-error";
+  return "text-destructive";
 }
 
-function EntityCoverageSection({ report }: { report: ContentOptimizationReport }) {
+function EntityCoverageSection({
+  report,
+}: {
+  report: ContentOptimizationReport;
+}) {
   const coverage = report.entityCoverage;
   const entities = [
     ...coverage.naturalLanguageEntities,
@@ -118,56 +132,59 @@ function EntityCoverageSection({ report }: { report: ContentOptimizationReport }
   };
 
   return (
-    <section className="rounded-lg border border-base-300 bg-base-100 p-4">
+    <section className="rounded-lg border border-border bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="font-semibold">Entity and variation coverage</h2>
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-muted-foreground">
             DataForSEO compares common terms and phrases from the parsed ranking
             pages. Add them only when they fit the topic.
           </p>
         </div>
-        <div className="text-right text-xs text-base-content/60">
+        <div className="text-right text-xs text-muted-foreground">
           <div>
             Density {coverage.yourUrlRelatedEntityDensityScore.toFixed(1)} /{" "}
             {coverage.competitorRelatedEntityDensityScore.toFixed(1)}
           </div>
           <div>
-            {counts.covered} covered · {counts.weak} weak · {counts.missing} missing
+            {counts.covered} covered · {counts.weak} weak · {counts.missing}{" "}
+            missing
           </div>
         </div>
       </div>
 
       {entities.length === 0 ? (
-        <p className="mt-4 text-sm text-base-content/60">
+        <p className="mt-4 text-sm text-muted-foreground">
           No shared entity candidates are available for this scan.
         </p>
       ) : (
         <div className="mt-4 overflow-x-auto">
-          <table className="table table-sm">
-            <thead>
-              <tr>
-                <th>Entity</th>
-                <th>Status</th>
-                <th>Importance</th>
-                <th>Your frequency</th>
-                <th>Competitor average</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Entity</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Importance</TableHead>
+                <TableHead>Your frequency</TableHead>
+                <TableHead>Competitor average</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {entities.map((entity) => (
-                <tr key={entity.entity}>
-                  <td className="font-medium">{entity.entity}</td>
-                  <td className={coverageClass(entity.coverageStatus)}>
+                <TableRow key={entity.entity}>
+                  <TableCell className="font-medium">{entity.entity}</TableCell>
+                  <TableCell className={coverageClass(entity.coverageStatus)}>
                     {coverageLabel(entity.coverageStatus)}
-                  </td>
-                  <td>{entity.importance}/10</td>
-                  <td>{formatNumber(entity.targetFrequency)}</td>
-                  <td>{entity.competitorAverageFrequency.toFixed(1)}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell>{entity.importance}/10</TableCell>
+                  <TableCell>{formatNumber(entity.targetFrequency)}</TableCell>
+                  <TableCell>
+                    {entity.competitorAverageFrequency.toFixed(1)}
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 
@@ -178,9 +195,10 @@ function EntityCoverageSection({ report }: { report: ContentOptimizationReport }
             {coverage.keywordVariations.map((variation) => (
               <span
                 key={variation.variation}
-                className={`rounded-md border border-base-300 px-2 py-1 text-xs ${coverageClass(variation.coverageStatus)}`}
+                className={`rounded-md border border-border px-2 py-1 text-xs ${coverageClass(variation.coverageStatus)}`}
               >
-                {variation.variation} · {coverageLabel(variation.coverageStatus)}
+                {variation.variation} ·{" "}
+                {coverageLabel(variation.coverageStatus)}
               </span>
             ))}
           </div>
@@ -200,19 +218,20 @@ function TopicClassificationSection({
     ([, values]) => values.length > 0,
   );
   return (
-    <section className="rounded-lg border border-base-300 bg-base-100 p-4">
+    <section className="rounded-lg border border-border bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="font-semibold">Topic and page classification</h2>
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-muted-foreground">
             Page type and topic suggestions from the target page and parsed
             ranking pages.
           </p>
         </div>
-        <div className="text-right text-xs text-base-content/60">
+        <div className="text-right text-xs text-muted-foreground">
           <div>Your page: {topic.yourPage.category ?? "Not classified"}</div>
           <div>
-            Confidence: {topic.yourPage.confidence === null
+            Confidence:{" "}
+            {topic.yourPage.confidence === null
               ? "—"
               : `${Math.round(topic.yourPage.confidence * 100)}%`}
           </div>
@@ -223,7 +242,7 @@ function TopicClassificationSection({
         <div>
           <h3 className="text-sm font-medium">Ranking page types</h3>
           {topic.pageClassification.length === 0 ? (
-            <p className="mt-2 text-sm text-base-content/60">
+            <p className="mt-2 text-sm text-muted-foreground">
               No ranking page was classified.
             </p>
           ) : (
@@ -231,11 +250,13 @@ function TopicClassificationSection({
               {topic.pageClassification.map((page) => (
                 <div
                   key={`${page.rank}-${page.url ?? page.category}`}
-                  className="flex items-center gap-2 rounded-md bg-base-200/50 p-2 text-sm"
+                  className="flex items-center gap-2 rounded-md bg-muted/50 p-2 text-sm"
                 >
-                  <span className="w-7 text-base-content/50">#{page.rank}</span>
+                  <span className="w-7 text-muted-foreground">
+                    #{page.rank}
+                  </span>
                   <span className="flex-1">{page.category}</span>
-                  <span className="text-xs text-base-content/50">
+                  <span className="text-xs text-muted-foreground">
                     {Math.round(page.confidence * 100)}%
                   </span>
                 </div>
@@ -246,12 +267,12 @@ function TopicClassificationSection({
 
         <div>
           <h3 className="text-sm font-medium">Suggested title</h3>
-          <p className="mt-2 rounded-md bg-base-200/50 p-3 text-sm">
+          <p className="mt-2 rounded-md bg-muted/50 p-3 text-sm">
             {topic.swipeContent.suggestedTitle ?? "No title suggestion."}
           </p>
           <h3 className="mt-4 text-sm font-medium">Topic coverage</h3>
           {topic.swipeContent.topicCoverage.length === 0 ? (
-            <p className="mt-2 text-sm text-base-content/60">
+            <p className="mt-2 text-sm text-muted-foreground">
               No missing topic was found.
             </p>
           ) : (
@@ -269,8 +290,8 @@ function TopicClassificationSection({
           <h3 className="font-medium">Topical authority questions</h3>
           <div className="mt-2 grid gap-3 md:grid-cols-2">
             {questions.map(([group, values]) => (
-              <div key={group} className="rounded-md bg-base-200/50 p-3">
-                <div className="text-xs font-semibold uppercase text-base-content/60">
+              <div key={group} className="rounded-md bg-muted/50 p-3">
+                <div className="text-xs font-semibold uppercase text-muted-foreground">
                   {group}
                 </div>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
@@ -287,17 +308,21 @@ function TopicClassificationSection({
   );
 }
 
-function InternalLinksSection({ report }: { report: ContentOptimizationReport }) {
+function InternalLinksSection({
+  report,
+}: {
+  report: ContentOptimizationReport;
+}) {
   const links = report.internalLinking;
   return (
-    <section className="rounded-lg border border-base-300 bg-base-100 p-4">
+    <section className="rounded-lg border border-border bg-card p-4">
       <h2 className="font-semibold">Internal links</h2>
-      <p className="mt-1 text-sm text-base-content/60">{links.note}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{links.note}</p>
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <div>
           <h3 className="text-sm font-medium">Add links from</h3>
           {links.addInternalLinksFrom.length === 0 ? (
-            <p className="mt-2 text-sm text-base-content/60">
+            <p className="mt-2 text-sm text-muted-foreground">
               No same-site ranking page was available for this recommendation.
             </p>
           ) : (
@@ -308,7 +333,7 @@ function InternalLinksSection({ report }: { report: ContentOptimizationReport })
                     href={url}
                     target="_blank"
                     rel="noreferrer"
-                    className="link link-primary break-all"
+                    className="text-primary underline-offset-4 hover:underline break-all"
                   >
                     {url}
                   </a>
@@ -331,7 +356,7 @@ function InternalLinksSection({ report }: { report: ContentOptimizationReport })
                     href={url}
                     target="_blank"
                     rel="noreferrer"
-                    className="link link-primary"
+                    className="text-primary underline-offset-4 hover:underline"
                   >
                     {url}
                   </a>
@@ -349,32 +374,32 @@ function ReportView({ report }: { report: ContentOptimizationReport }) {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 lg:grid-cols-[180px_1fr]">
-        <div className="rounded-lg border border-base-300 bg-base-100 p-5 text-center">
-          <div className="text-sm text-base-content/60">Content score</div>
+        <div className="rounded-lg border border-border bg-card p-5 text-center">
+          <div className="text-sm text-muted-foreground">Content score</div>
           <div className="mt-2 text-5xl font-bold">{report.score}</div>
-          <div className="mt-1 text-sm text-base-content/60">
+          <div className="mt-1 text-sm text-muted-foreground">
             Grade {report.grade}
           </div>
         </div>
-        <div className="rounded-lg border border-base-300 bg-base-100 p-5">
-          <div className="text-sm text-base-content/60">Summary</div>
+        <div className="rounded-lg border border-border bg-card p-5">
+          <div className="text-sm text-muted-foreground">Summary</div>
           <p className="mt-2 text-lg">{report.summary}</p>
-          <p className="mt-3 text-sm text-base-content/60">
+          <p className="mt-3 text-sm text-muted-foreground">
             {report.meta.pagesAnalyzed} page
             {report.meta.pagesAnalyzed === 1 ? "" : "s"} analyzed · scanned{" "}
             {formatDate(report.meta.scannedAt)}
           </p>
-          <p className="mt-1 text-xs text-base-content/50">
+          <p className="mt-1 text-xs text-muted-foreground">
             Source: {report.meta.provider} · {report.meta.analysisMethod}
           </p>
         </div>
       </div>
 
-      <section className="rounded-lg border border-base-300 bg-base-100 p-4">
+      <section className="rounded-lg border border-border bg-card p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <h2 className="font-semibold">Page metrics</h2>
-            <p className="text-sm text-base-content/60">
+            <p className="text-sm text-muted-foreground">
               Your page compared with the average of the top organic pages.
             </p>
           </div>
@@ -382,7 +407,7 @@ function ReportView({ report }: { report: ContentOptimizationReport }) {
             href={report.target.url}
             target="_blank"
             rel="noreferrer"
-            className="link link-primary inline-flex items-center gap-1 text-sm"
+            className="text-primary underline-offset-4 hover:underline inline-flex items-center gap-1 text-sm"
           >
             Open page <ArrowUpRight className="size-3" />
           </a>
@@ -393,15 +418,15 @@ function ReportView({ report }: { report: ContentOptimizationReport }) {
           ))}
         </div>
         <div className="mt-4 overflow-x-auto">
-          <table className="table table-sm">
-            <thead>
-              <tr>
-                <th>Metric</th>
-                <th>Your page</th>
-                <th>Top page average</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Metric</TableHead>
+                <TableHead>Your page</TableHead>
+                <TableHead>Top page average</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {[
                 [
                   "Keyword frequency",
@@ -410,16 +435,16 @@ function ReportView({ report }: { report: ContentOptimizationReport }) {
                 ],
                 ["External links", report.target.externalLinkCount, null],
               ].map(([label, target, benchmark]) => (
-                <tr key={String(label)}>
-                  <td>{label}</td>
-                  <td>{formatNumber(Number(target))}</td>
-                  <td>
+                <TableRow key={String(label)}>
+                  <TableCell>{label}</TableCell>
+                  <TableCell>{formatNumber(Number(target))}</TableCell>
+                  <TableCell>
                     {benchmark === null ? "—" : formatNumber(Number(benchmark))}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </section>
 
@@ -429,56 +454,60 @@ function ReportView({ report }: { report: ContentOptimizationReport }) {
 
       <InternalLinksSection report={report} />
 
-      <section className="rounded-lg border border-base-300 bg-base-100 p-4">
+      <section className="rounded-lg border border-border bg-card p-4">
         <h2 className="font-semibold">Related terms</h2>
-        <p className="text-sm text-base-content/60">
+        <p className="text-sm text-muted-foreground">
           Terms found on the top organic pages. Use them when they fit the
           topic.
         </p>
         {report.terms.length === 0 ? (
-          <p className="mt-4 text-sm text-base-content/60">
+          <p className="mt-4 text-sm text-muted-foreground">
             No competitor terms are available for this scan.
           </p>
         ) : (
           <div className="mt-3 overflow-x-auto">
-            <table className="table table-sm">
-              <thead>
-                <tr>
-                  <th>Term</th>
-                  <th>Status</th>
-                  <th>Your frequency</th>
-                  <th>Competitor average</th>
-                  <th>Coverage</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Term</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Your frequency</TableHead>
+                  <TableHead>Competitor average</TableHead>
+                  <TableHead>Coverage</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {report.terms.map((term) => (
-                  <tr key={term.term}>
-                    <td className="font-medium">{term.term}</td>
-                    <td>
+                  <TableRow key={term.term}>
+                    <TableCell className="font-medium">{term.term}</TableCell>
+                    <TableCell>
                       <span
                         className={`inline-flex items-center gap-1 ${statusClass(term.status)}`}
                       >
                         <StatusIcon status={term.status} />
                         {term.status}
                       </span>
-                    </td>
-                    <td>{formatNumber(term.targetFrequency)}</td>
-                    <td>{term.competitorAverageFrequency.toFixed(1)}</td>
-                    <td>{Math.round(term.competitorCoverage * 100)}%</td>
-                  </tr>
+                    </TableCell>
+                    <TableCell>{formatNumber(term.targetFrequency)}</TableCell>
+                    <TableCell>
+                      {term.competitorAverageFrequency.toFixed(1)}
+                    </TableCell>
+                    <TableCell>
+                      {Math.round(term.competitorCoverage * 100)}%
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-lg border border-base-300 bg-base-100 p-4">
+        <section className="rounded-lg border border-border bg-card p-4">
           <h2 className="font-semibold">Suggestions</h2>
           {report.suggestions.length === 0 ? (
-            <p className="mt-3 text-sm text-base-content/60">
+            <p className="mt-3 text-sm text-muted-foreground">
               No major content gaps were found.
             </p>
           ) : (
@@ -490,15 +519,15 @@ function ReportView({ report }: { report: ContentOptimizationReport }) {
           )}
         </section>
 
-        <section className="rounded-lg border border-base-300 bg-base-100 p-4">
+        <section className="rounded-lg border border-border bg-card p-4">
           <h2 className="font-semibold">Competitors</h2>
           <div className="mt-3 space-y-2">
             {report.competitors.map((competitor) => (
               <div
                 key={`${competitor.rank}-${competitor.url}`}
-                className="flex items-start gap-3 rounded-md bg-base-200/50 p-3"
+                className="flex items-start gap-3 rounded-md bg-muted/50 p-3"
               >
-                <span className="w-6 shrink-0 text-sm font-semibold text-base-content/60">
+                <span className="w-6 shrink-0 text-sm font-semibold text-muted-foreground">
                   #{competitor.rank}
                 </span>
                 <div className="min-w-0 flex-1">
@@ -506,12 +535,12 @@ function ReportView({ report }: { report: ContentOptimizationReport }) {
                     href={competitor.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="link link-primary break-all text-sm"
+                    className="text-primary underline-offset-4 hover:underline break-all text-sm"
                   >
                     {competitor.title || competitor.url}
                   </a>
                   {competitor.page ? (
-                    <div className="mt-1 text-xs text-base-content/60">
+                    <div className="mt-1 text-xs text-muted-foreground">
                       {formatNumber(competitor.page.wordCount)} words ·{" "}
                       {formatNumber(competitor.page.h2Count)} H2 ·{" "}
                       {formatNumber(competitor.page.internalLinkCount)} internal
@@ -577,10 +606,7 @@ export function ContentOptimizationPage({
     }
     setScanPhase("serp");
     const pageTimer = window.setTimeout(() => setScanPhase("pages"), 1200);
-    const reportTimer = window.setTimeout(
-      () => setScanPhase("report"),
-      4200,
-    );
+    const reportTimer = window.setTimeout(() => setScanPhase("report"), 4200);
     return () => {
       window.clearTimeout(pageTimer);
       window.clearTimeout(reportTimer);
@@ -625,34 +651,30 @@ export function ContentOptimizationPage({
       <div className="mx-auto max-w-7xl space-y-4">
         <div>
           <h1 className="text-2xl font-semibold">Content Optimization</h1>
-          <p className="text-sm text-base-content/70">
+          <p className="text-sm text-muted-foreground">
             Compare one page with the top organic pages for a keyword.
           </p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-lg border border-base-300 bg-base-100 p-4"
+          className="rounded-lg border border-border bg-card p-4"
         >
           <div className="grid gap-3 lg:grid-cols-[1fr_1.5fr_auto] lg:items-end">
-            <label className="form-control">
-              <span className="label-text mb-1 text-sm font-medium">
-                Target keyword
-              </span>
-              <input
-                className="input input-bordered w-full"
+            <label className="flex flex-col">
+              <span className="mb-1 text-sm font-medium">Target keyword</span>
+              <Input
+                className="w-full"
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
                 placeholder="content optimization"
                 maxLength={150}
               />
             </label>
-            <label className="form-control">
-              <span className="label-text mb-1 text-sm font-medium">
-                Page URL
-              </span>
-              <input
-                className="input input-bordered w-full"
+            <label className="flex flex-col">
+              <span className="mb-1 text-sm font-medium">Page URL</span>
+              <Input
+                className="w-full"
                 value={url}
                 onChange={(event) => setUrl(event.target.value)}
                 placeholder="https://example.com/page"
@@ -660,19 +682,16 @@ export function ContentOptimizationPage({
                 maxLength={2048}
               />
             </label>
-            <button
-              className="btn btn-primary"
-              disabled={runMutation.isPending}
-            >
+            <Button disabled={runMutation.isPending}>
               {runMutation.isPending ? (
                 <LoaderCircle className="size-4 animate-spin" />
               ) : (
                 <FileSearch className="size-4" />
               )}
               {runMutation.isPending ? "Scanning…" : "Scan page"}
-            </button>
+            </Button>
           </div>
-          <p className="mt-3 text-xs text-base-content/60">
+          <p className="mt-3 text-xs text-muted-foreground">
             The scan uses the project market and consumes DataForSEO credits for
             one SERP request and page parsing requests.
           </p>
@@ -685,7 +704,7 @@ export function ContentOptimizationPage({
           {formError ? (
             <div
               role="alert"
-              className="mt-3 flex items-start gap-2 rounded-md bg-error/10 p-3 text-sm text-error"
+              className="mt-3 flex items-start gap-2 rounded-md bg-destructive/10 p-3 text-sm text-destructive"
             >
               <AlertCircle className="mt-0.5 size-4 shrink-0" />
               <span>{formError}</span>
@@ -694,11 +713,11 @@ export function ContentOptimizationPage({
         </form>
 
         {history.length > 0 ? (
-          <section className="rounded-lg border border-base-300 bg-base-100 p-4">
+          <section className="rounded-lg border border-border bg-card p-4">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <h2 className="font-semibold">Recent scans</h2>
-                <p className="text-sm text-base-content/60">
+                <p className="text-sm text-muted-foreground">
                   Select a stored report.
                 </p>
               </div>
@@ -727,22 +746,22 @@ export function ContentOptimizationPage({
         {reportQuery.isError ? (
           <div
             role="alert"
-            className="rounded-md bg-error/10 p-3 text-sm text-error"
+            className="rounded-md bg-destructive/10 p-3 text-sm text-destructive"
           >
             {getStandardErrorMessage(reportQuery.error)}
           </div>
         ) : null}
         {scanId && reportQuery.isPending ? (
-          <div className="flex items-center gap-2 rounded-lg border border-base-300 bg-base-100 p-6 text-sm text-base-content/60">
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
             <LoaderCircle className="size-4 animate-spin" /> Loading report…
           </div>
         ) : report ? (
           <ReportView report={report} />
         ) : history.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-base-300 p-10 text-center">
-            <FileSearch className="mx-auto size-8 text-base-content/40" />
+          <div className="rounded-lg border border-dashed border-border p-10 text-center">
+            <FileSearch className="mx-auto size-8 text-muted-foreground" />
             <h2 className="mt-3 font-semibold">No scans yet</h2>
-            <p className="mt-1 text-sm text-base-content/60">
+            <p className="mt-1 text-sm text-muted-foreground">
               Enter a keyword and page URL to create the first report.
             </p>
           </div>
@@ -767,23 +786,25 @@ function ScanHistoryCard({
 }) {
   return (
     <div
-      className={`rounded-md border p-3 ${active ? "border-primary bg-primary/5" : "border-base-300"}`}
+      className={`rounded-md border p-3 ${active ? "border-primary bg-primary/5" : "border-border"}`}
     >
       <button type="button" onClick={onSelect} className="w-full text-left">
         <div className="flex items-center justify-between gap-2">
           <span className="font-medium">{scan.keyword}</span>
           <span className="text-sm font-semibold">{scan.score}/100</span>
         </div>
-        <div className="mt-1 truncate text-xs text-base-content/60">
+        <div className="mt-1 truncate text-xs text-muted-foreground">
           {scan.url}
         </div>
-        <div className="mt-2 text-xs text-base-content/60">
+        <div className="mt-2 text-xs text-muted-foreground">
           Grade {scan.grade} · {formatDate(scan.createdAt)}
         </div>
       </button>
-      <button
+      <Button
+        variant="ghost"
+        size="xs"
         type="button"
-        className="btn btn-ghost btn-xs mt-2 gap-1 text-error"
+        className="mt-2 gap-1 text-destructive"
         onClick={onDelete}
         disabled={deleting}
       >
@@ -793,7 +814,7 @@ function ScanHistoryCard({
           <Trash2 className="size-3" />
         )}
         Delete
-      </button>
+      </Button>
     </div>
   );
 }

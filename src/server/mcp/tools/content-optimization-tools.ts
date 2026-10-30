@@ -2,7 +2,10 @@ import { z } from "zod";
 import { ContentOptimizationService } from "@/server/features/content-optimization/services/ContentOptimizationService";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
-import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
+import {
+  looseObjectOutputSchema,
+  optionalMetaOutputSchema,
+} from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import {
   languageCodeSchema,
@@ -10,7 +13,6 @@ import {
   projectIdSchema,
 } from "@/server/mcp/schemas";
 import { resolveMarket } from "@/shared/keyword-locations";
-import { contentOptimizationReportSchema } from "@/shared/content-optimization";
 
 const runInputSchema = {
   projectId: projectIdSchema,
@@ -22,14 +24,16 @@ const runInputSchema = {
 
 type RunArgs = z.infer<z.ZodObject<typeof runInputSchema>>;
 
-const scanOutputSchema = z
-  .object({
-    scanId: z.string(),
-    status: z.literal("completed"),
-    report: contentOptimizationReportSchema,
-    ...optionalMetaOutputSchema,
-  })
-  .passthrough();
+// The report is published as an open object: MCP output objects must accept
+// added fields at every level, and the shared report schema is strict.
+const scanOutputSchema = z.looseObject({
+  scanId: z.string(),
+  status: z.literal("completed"),
+  report: looseObjectOutputSchema.describe(
+    "Content optimization report: meta, score, grade, summary, target, benchmark, terms, competitors, suggestions, focusAreas, entityCoverage, topicAndClassification, internalLinking, competitorTermCoverage.",
+  ),
+  ...optionalMetaOutputSchema,
+});
 
 export const runContentOptimizationTool = {
   name: "run_content_optimization",

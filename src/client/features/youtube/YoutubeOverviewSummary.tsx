@@ -46,14 +46,11 @@ export function YoutubeOverviewSkeleton() {
     <div className="space-y-4" aria-label="Loading YouTube data">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
         {Array.from({ length: 7 }, (_, index) => (
-          <div
-            key={index}
-            className="h-24 animate-pulse rounded-xl bg-base-200"
-          />
+          <div key={index} className="h-24 animate-pulse rounded-xl bg-muted" />
         ))}
       </div>
-      <div className="h-72 animate-pulse rounded-xl bg-base-200" />
-      <div className="h-96 animate-pulse rounded-xl bg-base-200" />
+      <div className="h-72 animate-pulse rounded-xl bg-muted" />
+      <div className="h-96 animate-pulse rounded-xl bg-muted" />
     </div>
   );
 }

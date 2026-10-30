@@ -1,3 +1,4 @@
+import { sort } from "remeda";
 import type { GscSearchAnalyticsRow } from "@/server/lib/gscClient";
 
 /**
@@ -105,7 +106,8 @@ export function compareRows(
       reason,
     });
   }
-  return losses.toSorted(
+  return sort(
+    losses,
     (a, b) =>
       a.clickChange - b.clickChange || a.impressionChange - b.impressionChange,
   );
@@ -225,11 +227,11 @@ export function rankCauses(input: {
     }
   }
 
-  return causes
-    .filter((cause) => cause.weight > 0)
-    .toSorted((a, b) => b.weight - a.weight)
-    .map((cause) => ({
-      ...cause,
-      weight: Math.round(cause.weight * 100) / 100,
-    }));
+  return sort(
+    causes.filter((cause) => cause.weight > 0),
+    (a, b) => b.weight - a.weight,
+  ).map((cause) => ({
+    ...cause,
+    weight: Math.round(cause.weight * 100) / 100,
+  }));
 }

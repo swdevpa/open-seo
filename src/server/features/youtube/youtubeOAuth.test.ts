@@ -7,7 +7,7 @@ import { getYoutubeGrantAccountId } from "./services/YoutubeService";
 
 const mocks = vi.hoisted(() => ({
   getGoogleOAuthClientConfig: vi.fn(),
-  hasSelfHostedGoogleOAuthConfig: vi.fn(),
+  hasGoogleOAuthConfig: vi.fn(),
   getAuth: vi.fn(),
   resolveUserContextFromHeaders: vi.fn(),
   getProjectForOrganization: vi.fn(),
@@ -18,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   insertValues: vi.fn(),
 }));
 
+vi.mock("cloudflare:workers", () => ({ env: {} }));
 vi.mock("@/db/schema", () => ({
   account: {
     id: "id",
@@ -50,7 +51,7 @@ vi.mock("@/server/lib/youtubeClient", () => ({
 }));
 vi.mock("@/server/features/google/oauth-config", () => ({
   getGoogleOAuthClientConfig: mocks.getGoogleOAuthClientConfig,
-  hasSelfHostedGoogleOAuthConfig: mocks.hasSelfHostedGoogleOAuthConfig,
+  hasGoogleOAuthConfig: mocks.hasGoogleOAuthConfig,
 }));
 vi.mock("./repositories/YoutubeConnectionRepository", () => ({
   YoutubeConnectionRepository: { upsert: mocks.saveConnection },
@@ -70,7 +71,7 @@ describe("YouTube OAuth", () => {
       clientId: "client-id",
       clientSecret: "client-secret",
     });
-    mocks.hasSelfHostedGoogleOAuthConfig.mockResolvedValue(true);
+    mocks.hasGoogleOAuthConfig.mockResolvedValue(true);
     mocks.selectLimit.mockResolvedValue([]);
     mocks.insertValues.mockResolvedValue(undefined);
     mocks.getAuth.mockReturnValue({

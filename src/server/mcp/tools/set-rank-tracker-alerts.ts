@@ -49,9 +49,9 @@ export const setRankTrackerAlertsTool = {
     outputSchema: z
       .object({
         trackerId: z.string(),
-        settings: rankAlertSettingsSchema,
+        settings: rankAlertSettingsSchema.loose(),
         test: z
-          .object({
+          .looseObject({
             ok: z.boolean(),
             status: z.number().nullable(),
             message: z.string(),

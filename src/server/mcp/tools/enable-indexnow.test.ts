@@ -3,29 +3,28 @@ import { enableIndexNowTool } from "./enable-indexnow";
 import { makeToolContext } from "./tool-test-support";
 
 const mocks = vi.hoisted(() => ({
-  getProjectForOrganization: vi.fn(),
-  enableKey: vi.fn(),
+  setUp: vi.fn(),
 }));
 
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
   ProjectService: {
-    getProjectForOrganization: mocks.getProjectForOrganization,
+    getProjectForOrganization: async () => ({ id: "project_123" }),
   },
 }));
 
 vi.mock("@/server/features/indexnow/services/IndexNowService", () => ({
-  IndexNowService: { enableKey: mocks.enableKey },
+  IndexNowService: { setUp: mocks.setUp },
 }));
 
 const toolContext = makeToolContext();
 
 describe("enable_indexnow MCP tool", () => {
   beforeEach(() => {
-    mocks.getProjectForOrganization.mockResolvedValue({
-      id: "project_123",
+    mocks.setUp.mockResolvedValue({
       domain: "acme.com",
+      key: "abc123",
+      created: true,
     });
-    mocks.enableKey.mockResolvedValue("abc123");
   });
 
   it("returns the key and where the key file must be served", async () => {
@@ -39,17 +38,5 @@ describe("enable_indexnow MCP tool", () => {
       keyFileName: "abc123.txt",
       keyFileUrl: "https://acme.com/abc123.txt",
     });
-  });
-
-  it("refuses to enable IndexNow for a project without a domain", async () => {
-    mocks.getProjectForOrganization.mockResolvedValue({
-      id: "project_123",
-      domain: null,
-    });
-
-    await expect(
-      enableIndexNowTool.handler({ projectId: "project_123" }, toolContext),
-    ).rejects.toThrow("Set a project domain");
-    expect(mocks.enableKey).not.toHaveBeenCalled();
   });
 });

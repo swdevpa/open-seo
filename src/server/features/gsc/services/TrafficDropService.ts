@@ -20,7 +20,7 @@ const CHECKED_PAGE_LIMIT = 10;
 
 function auditFlags(page: {
   statusCode: number | null;
-  fetchClass: "ok" | "blocked" | "error";
+  fetchClass: "ok" | "blocked" | "error" | "rate_limited";
   isIndexable: boolean;
   url: string;
   canonicalUrl: string | null;

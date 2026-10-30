@@ -7,8 +7,8 @@ const mocks = vi.hoisted(() => ({
   fetch: vi.fn<typeof fetch>(),
 }));
 
-vi.mock("@/lib/auth", () => ({
-  getAuth: () => ({ api: { getAccessToken: mocks.getAccessToken } }),
+vi.mock("@/server/features/google/googleOAuth", () => ({
+  getGoogleAccessToken: mocks.getAccessToken,
 }));
 
 function jsonResponse(body: unknown, status = 200) {
@@ -23,7 +23,7 @@ function requestUrl(input: RequestInfo | URL): string {
 
 describe("youtubeClient", () => {
   beforeEach(() => {
-    mocks.getAccessToken.mockResolvedValue({ accessToken: "youtube-token" });
+    mocks.getAccessToken.mockResolvedValue("youtube-token");
     vi.stubGlobal("fetch", mocks.fetch);
   });
 
@@ -69,11 +69,9 @@ describe("youtubeClient", () => {
       },
     ]);
     expect(mocks.getAccessToken).toHaveBeenCalledWith({
-      body: {
-        providerId: "youtube",
-        userId: "user-1",
-        accountId: "youtube:project-1:channel-1",
-      },
+      providerId: "youtube",
+      userId: "user-1",
+      accountId: "youtube:project-1:channel-1",
     });
     const request = new URL(requestUrl(mocks.fetch.mock.calls[0]?.[0]));
     expect(request.searchParams.get("ids")).toBe("channel==channel-1");

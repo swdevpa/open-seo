@@ -26,6 +26,86 @@ const HEADING_LEVELS: Record<string, number> = {
   h6: 6,
 };
 const MAX_ANCHOR_CHARS = 200;
+/**
+ * Per-page caps on the extracted collections. Crawler-trap and mega-menu
+ * pages can carry thousands of links/images per page, and crawled pages sit
+ * in memory in 25-page persist batches — uncapped collections were part of
+ * the audit engine's exceededMemory profile. Counts derived from these
+ * arrays saturate at the cap on such pathological pages.
+ */
+const MAX_EXTRACTED_LINKS = 1_000;
+const MAX_EXTRACTED_IMAGES = 1_000;
+// Common app entry points. Scripts alone also appear on ordinary HTML pages.
+const APP_ROOT_IDS = new Set(["root", "app", "__next", "__nuxt"]);
+/**
+ * Elements a browser renders on their own line. Minified HTML has no
+ * whitespace between them, so `<p>one</p><p>two</p>` would read as "onetwo"
+ * without a separator at their boundaries.
+ */
+const BLOCK_TAGS = new Set([
+  "address",
+  "article",
+  "aside",
+  "blockquote",
+  "br",
+  "caption",
+  "dd",
+  "details",
+  "dialog",
+  "div",
+  "dl",
+  "dt",
+  "fieldset",
+  "figcaption",
+  "figure",
+  "footer",
+  "form",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "header",
+  "hgroup",
+  "hr",
+  "li",
+  "main",
+  "nav",
+  "ol",
+  "p",
+  "pre",
+  "section",
+  "summary",
+  "table",
+  "td",
+  "th",
+  "tr",
+  "ul",
+]);
+// Chinese, Japanese, Thai, Lao, Khmer and Burmese are written without spaces
+// between words, so a whitespace split counts a whole paragraph as one word
+// and flags those pages as thin content. Tokens in those scripts get their
+// words from Intl.Segmenter; every other token still counts as one word, so
+// counts for space-separated languages are unchanged.
+const SPACELESS_SCRIPT =
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
+const wordSegmenter = new Intl.Segmenter(undefined, { granularity: "word" });
+
+function countWords(text: string): number {
+  let count = 0;
+  for (const token of text.split(/\s+/)) {
+    if (!token) continue;
+    if (!SPACELESS_SCRIPT.test(token)) {
+      count += 1;
+      continue;
+    }
+    for (const segment of wordSegmenter.segment(token)) {
+      if (segment.isWordLike) count += 1;
+    }
+  }
+  return count;
+}
 
 interface OpenAnchor {
   href: string;
@@ -56,6 +136,8 @@ export function analyzeHtml(
   let ogDescription: string | null = null;
   let ogImage: string | null = null;
   let hasStructuredData = false;
+  let hasAppRoot = false;
+  let hasExecutableScript = false;
   const hreflangTags: string[] = [];
 
   const h1s: string[] = [];
@@ -76,11 +158,22 @@ export function analyzeHtml(
   const bodyParts: string[] = [];
   const fallbackParts: string[] = [];
 
+  const addVisibleText = (text: string) => {
+    if (suppressDepth > 0) return;
+    if (bodyDepth > 0) {
+      bodyParts.push(text);
+    } else if (headDepth === 0) {
+      fallbackParts.push(text);
+    }
+  };
+
   const handleMetaTag = (attribs: Record<string, string>) => {
     const content = attribs["content"];
-    if (attribs["name"] === "description") {
+    // HTML meta names are ASCII case-insensitive: "Description" is valid.
+    const metaName = attribs["name"]?.toLowerCase();
+    if (metaName === "description") {
       metaDescription ??= content?.trim() ?? "";
-    } else if (attribs["name"] === "robots") {
+    } else if (metaName === "robots") {
       robotsMeta ??= content ?? null;
     } else if (attribs["property"] === "og:title") {
       ogTitle ??= content ?? null;
@@ -103,6 +196,7 @@ export function analyzeHtml(
     if (!openAnchor) return;
     const { href, rel, text } = openAnchor;
     openAnchor = null;
+    if (linksByTarget.size >= MAX_EXTRACTED_LINKS) return;
     const resolved = normalizeUrl(href, pageUrl);
     if (!resolved || linksByTarget.has(resolved)) return;
     const anchor = text
@@ -126,6 +220,10 @@ export function analyzeHtml(
         }
         if (name === "noscript") noscriptDepth += 1;
         if (noscriptDepth > 0) return;
+        if (BLOCK_TAGS.has(name)) addVisibleText(" ");
+        if (headDepth === 0 && suppressDepth === 0) {
+          hasAppRoot ||= APP_ROOT_IDS.has(attribs["id"]) || name === "app-root";
+        }
         switch (name) {
           case "title":
             // Ignore <title> inside <svg> — only the document title counts.
@@ -148,12 +246,20 @@ export function analyzeHtml(
             handleLinkTag(attribs);
             break;
           case "img":
-            images.push({
-              src: attribs["src"] ?? null,
-              alt: "alt" in attribs ? attribs["alt"] : null,
-            });
+            if (images.length < MAX_EXTRACTED_IMAGES) {
+              images.push({
+                src: attribs["src"] ?? null,
+                alt: "alt" in attribs ? attribs["alt"] : null,
+              });
+            }
             break;
           case "script":
+            hasExecutableScript ||= [
+              "",
+              "module",
+              "text/javascript",
+              "application/javascript",
+            ].includes(attribs["type"]?.toLowerCase() ?? "");
             if (attribs["type"] === "application/ld+json") {
               hasStructuredData = true;
             }
@@ -187,11 +293,7 @@ export function analyzeHtml(
         }
         if (openH1) openH1.push(text);
         if (openAnchor) openAnchor.text.push(text);
-        if (bodyDepth > 0) {
-          bodyParts.push(text);
-        } else if (headDepth === 0) {
-          fallbackParts.push(text);
-        }
+        addVisibleText(text);
       },
       onclosetag(name) {
         if (NON_CONTENT_TAGS.has(name) && suppressDepth > 0) {
@@ -202,6 +304,7 @@ export function analyzeHtml(
           return;
         }
         if (noscriptDepth > 0) return;
+        if (BLOCK_TAGS.has(name)) addVisibleText(" ");
         if (name === "title" && titleDepth > 0) {
           titleDepth -= 1;
           if (titleDepth === 0) titleDone = true;
@@ -223,7 +326,7 @@ export function analyzeHtml(
 
   const rawText = (sawBody ? bodyParts : fallbackParts).join("");
   const bodyText = rawText.replace(/\s+/g, " ").trim();
-  const wordCount = bodyText ? bodyText.split(/\s+/).length : 0;
+  const wordCount = countWords(bodyText);
 
   return {
     url: pageUrl,
@@ -241,6 +344,13 @@ export function analyzeHtml(
     headingOrder,
     wordCount,
     bodyText,
+    javascriptShell:
+      hasAppRoot &&
+      hasExecutableScript &&
+      wordCount < 20 &&
+      headingOrder.length === 0 &&
+      linksByTarget.size === 0 &&
+      images.length === 0,
     images,
     links: Array.from(linksByTarget.values()),
     hasStructuredData,

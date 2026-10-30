@@ -53,9 +53,9 @@ export function YoutubeKpiCards({
         {cards.map((card) => (
           <div
             key={card.label}
-            className="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm"
+            className="rounded-xl border border-border bg-card p-4 shadow-sm"
           >
-            <p className="text-xs font-medium uppercase tracking-wide text-base-content/55">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {card.label}
             </p>
             <p className="mt-2 text-xl font-semibold tabular-nums">
@@ -64,7 +64,7 @@ export function YoutubeKpiCards({
           </div>
         ))}
       </div>
-      <p className="text-xs text-base-content/55">
+      <p className="text-xs text-muted-foreground">
         Public lifetime views use YouTube&apos;s current channel counter. The
         period values use YouTube Analytics. YouTube may use different counting
         rules, especially for Shorts.

@@ -2,10 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
-import { showIndexNowSubmissionToast } from "@/client/features/indexnow/submissionToast";
+import { Button } from "@/client/components/ui/button";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
-import { submitAuditToIndexNow } from "@/serverFunctions/indexnow";
-import { getProjects } from "@/serverFunctions/projects";
+import {
+  getIndexNowSetup,
+  submitAuditToIndexNow,
+} from "@/serverFunctions/indexnow";
 
 // Pages the server submits: fetched OK, indexable, not behind bot protection.
 // Mirrors IndexNowService.submitAuditPages so the label matches the request.
@@ -24,6 +26,29 @@ export function countIndexNowEligiblePages(
   ).length;
 }
 
+const pluralUrls = (count: number) => `${count} URL${count === 1 ? "" : "s"}`;
+
+type AuditSubmission = Awaited<ReturnType<typeof submitAuditToIndexNow>>;
+
+function showSubmissionToasts(result: AuditSubmission) {
+  const sent = result.hosts
+    .filter((host) => host.status === "submitted")
+    .reduce((count, host) => count + host.urlCount, 0);
+  for (const host of result.hosts) {
+    if (host.status !== "failed") continue;
+    toast.error("Couldn't submit to IndexNow", {
+      description: host.message,
+      duration: 10_000,
+    });
+  }
+  if (sent > 0) toast.success(`Submitted ${pluralUrls(sent)}`);
+  if (result.skipped.length > 0) {
+    toast.warning(
+      `Skipped ${pluralUrls(result.skipped.length)} not on the project's website`,
+    );
+  }
+}
+
 export function SubmitAuditToIndexNowButton({
   projectId,
   auditId,
@@ -33,47 +58,53 @@ export function SubmitAuditToIndexNowButton({
   auditId: string;
   eligibleCount: number;
 }) {
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
-    queryFn: () => getProjects(),
+  // Same key as IndexNowSettings, so setting it up there updates this button.
+  const setupQuery = useQuery({
+    queryKey: ["indexnow-setup", projectId],
+    queryFn: () => getIndexNowSetup({ data: { projectId } }),
   });
-  const project = projectsQuery.data?.find((entry) => entry.id === projectId);
 
   const submitMutation = useMutation({
     mutationFn: () => submitAuditToIndexNow({ data: { projectId, auditId } }),
-    onSuccess: showIndexNowSubmissionToast,
+    onSuccess: showSubmissionToasts,
     onError: (error) =>
       toast.error(
-        getStandardErrorMessage(error, "Failed to submit to IndexNow"),
+        getStandardErrorMessage(error, "Couldn't submit to IndexNow"),
       ),
   });
 
-  if (!project || eligibleCount === 0) return null;
+  if (!setupQuery.data || eligibleCount === 0) return null;
 
-  if (!project.domain || !project.indexNowKey) {
+  if (!setupQuery.data.domain || !setupQuery.data.key) {
     return (
-      <Link
-        to="/p/$projectId/settings"
-        params={{ projectId }}
-        hash="indexnow"
-        className="btn btn-sm btn-ghost gap-1"
+      <Button
+        variant="ghost"
+        size="sm"
+        nativeButton={false}
+        render={
+          <Link
+            to="/p/$projectId/settings/integrations"
+            params={{ projectId }}
+            hash="indexnow"
+          />
+        }
       >
-        <Send className="size-4" />
+        <Send data-icon="inline-start" />
         Set up IndexNow
-      </Link>
+      </Button>
     );
   }
 
   return (
-    <button
-      type="button"
-      className="btn btn-sm btn-ghost gap-1"
+    <Button
+      variant="ghost"
+      size="sm"
       onClick={() => submitMutation.mutate()}
-      disabled={submitMutation.isPending}
+      pending={submitMutation.isPending}
       title="Submit every indexable page from this audit to IndexNow"
     >
-      <Send className="size-4" />
+      {submitMutation.isPending ? null : <Send data-icon="inline-start" />}
       Submit {eligibleCount} to IndexNow
-    </button>
+    </Button>
   );
 }

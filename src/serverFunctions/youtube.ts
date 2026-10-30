@@ -3,7 +3,7 @@ import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { YoutubeService } from "@/server/features/youtube/services/YoutubeService";
 import { createYoutubeAuthorizationUrl } from "@/server/features/youtube/youtubeOAuth";
-import { hasSelfHostedGoogleOAuthConfig } from "@/server/features/google/oauth-config";
+import { hasGoogleOAuthConfig } from "@/server/features/google/oauth-config";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { requireProjectContext } from "@/serverFunctions/middleware";
@@ -34,7 +34,7 @@ export const getYoutubeOverview = createServerFn({ method: "POST" })
         endDate: data.endDate,
       }),
       isHostedServerAuthMode(),
-      hasSelfHostedGoogleOAuthConfig(),
+      hasGoogleOAuthConfig(),
     ]);
     return {
       ...overview,

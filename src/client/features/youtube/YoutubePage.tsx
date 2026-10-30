@@ -1,3 +1,13 @@
+import { Alert } from "@/client/components/ui/alert";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/client/components/ui/table";
+import { Button } from "@/client/components/ui/button";
 import { useEffect, useMemo, useState } from "react";
 import {
   keepPreviousData,
@@ -48,7 +58,7 @@ function StatusPill({
       ? "border-success/30 bg-success/10 text-success"
       : status === "reconnect"
         ? "border-warning/30 bg-warning/10 text-warning"
-        : "border-base-300 bg-base-200 text-base-content/65";
+        : "border-border bg-muted text-muted-foreground";
   return (
     <span
       className={`inline-flex rounded-full border px-2 py-1 text-xs font-medium ${className}`}
@@ -73,7 +83,7 @@ function ChannelAvatar({
       loading="lazy"
     />
   ) : (
-    <span className="grid size-9 place-items-center rounded-full bg-error/10 text-error">
+    <span className="grid size-9 place-items-center rounded-full bg-destructive/10 text-destructive">
       <Youtube className="size-4" />
     </span>
   );
@@ -167,12 +177,12 @@ export function YoutubePage({
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="grid size-8 place-items-center rounded-lg border border-base-300 bg-base-100 text-error shadow-sm">
+              <span className="grid size-8 place-items-center rounded-lg border border-border bg-card text-destructive shadow-sm">
                 <Youtube className="size-5" />
               </span>
               <h1 className="text-2xl font-semibold">YouTube channels</h1>
             </div>
-            <p className="mt-1 text-sm text-base-content/70">
+            <p className="mt-1 text-sm text-muted-foreground">
               See channel views, likes, comments, and subscriber activity for
               this project.
             </p>
@@ -183,9 +193,11 @@ export function YoutubePage({
               endDate={endDate}
               onApply={applyRange}
             />
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               type="button"
-              className="btn btn-ghost btn-sm gap-1.5"
+              className="gap-1.5"
               onClick={refresh}
               disabled={overviewQuery.isFetching}
             >
@@ -193,25 +205,26 @@ export function YoutubePage({
                 className={`size-4 ${overviewQuery.isFetching ? "animate-spin" : ""}`}
               />
               Refresh
-            </button>
-            <button
+            </Button>
+            <Button
+              size="sm"
               type="button"
-              className="btn btn-error btn-sm gap-1.5 text-white"
+              className="gap-1.5"
               onClick={connect}
             >
               <Youtube className="size-4" />
               Connect channel
-            </button>
+            </Button>
           </div>
         </div>
 
         {overviewQuery.isError ? (
-          <div className="alert alert-error text-sm">
+          <Alert variant="destructive">
             {getStandardErrorMessage(
               overviewQuery.error,
               "Could not load YouTube data.",
             )}
-          </div>
+          </Alert>
         ) : null}
 
         {overview?.googleOAuthConfigured === false ? (
@@ -224,58 +237,60 @@ export function YoutubePage({
         {overviewQuery.isPending ? (
           <YoutubeOverviewSkeleton />
         ) : channels.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-base-300 bg-base-100 p-10 text-center shadow-sm">
-            <Youtube className="mx-auto size-8 text-error/70" />
+          <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center shadow-sm">
+            <Youtube className="mx-auto size-8 text-destructive/70" />
             <h2 className="mt-3 text-lg font-semibold">
               No YouTube channels connected
             </h2>
-            <p className="mx-auto mt-1 max-w-md text-sm text-base-content/65">
+            <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
               Connect a channel to see its current subscribers, total views, and
               period activity.
             </p>
-            <button
-              type="button"
-              className="btn btn-error mt-5 text-white"
-              onClick={connect}
-            >
+            <Button type="button" className="mt-5" onClick={connect}>
               Connect channel
-            </button>
+            </Button>
           </div>
         ) : (
           <>
             <YoutubeOverviewSummary channels={channels} />
-            <div className="overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-sm">
-              <div className="flex items-center justify-between gap-3 border-b border-base-300 px-4 py-3">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+              <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
                 <div>
                   <h2 className="font-semibold">Connected channels</h2>
-                  <p className="text-xs text-base-content/60">
+                  <p className="text-xs text-muted-foreground">
                     {overview?.range.startDate} to {overview?.range.endDate}
                   </p>
                 </div>
                 {overviewQuery.isFetching && !overviewQuery.isPending ? (
-                  <Loader2 className="size-4 animate-spin text-base-content/45" />
+                  <Loader2 className="size-4 animate-spin text-muted-foreground" />
                 ) : null}
               </div>
               <div className="overflow-x-auto">
-                <table className="table table-zebra">
-                  <thead>
-                    <tr>
-                      <th>Channel</th>
-                      <th className="text-right">Subscribers</th>
-                      <th className="text-right">Public lifetime views</th>
-                      <th className="text-right">Analytics views</th>
-                      <th className="text-right">Engaged views</th>
-                      <th className="text-right">Likes</th>
-                      <th className="text-right">Comments</th>
-                      <th className="text-right">Net subs</th>
-                      <th>Status</th>
-                      <th />
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Channel</TableHead>
+                      <TableHead className="text-right">Subscribers</TableHead>
+                      <TableHead className="text-right">
+                        Public lifetime views
+                      </TableHead>
+                      <TableHead className="text-right">
+                        Analytics views
+                      </TableHead>
+                      <TableHead className="text-right">
+                        Engaged views
+                      </TableHead>
+                      <TableHead className="text-right">Likes</TableHead>
+                      <TableHead className="text-right">Comments</TableHead>
+                      <TableHead className="text-right">Net subs</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {channels.map((channel) => (
-                      <tr key={channel.channelId}>
-                        <td>
+                      <TableRow key={channel.channelId}>
+                        <TableCell>
                           <Link
                             to="/p/$projectId/youtube/$channelId"
                             params={{ projectId, channelId: channel.channelId }}
@@ -291,51 +306,55 @@ export function YoutubePage({
                                 {channel.channelName}
                               </span>
                               {channel.channelHandle ? (
-                                <span className="block truncate text-xs text-base-content/55">
+                                <span className="block truncate text-xs text-muted-foreground">
                                   {channel.channelHandle}
                                 </span>
                               ) : null}
                             </span>
                           </Link>
-                        </td>
-                        <td className="text-right tabular-nums">
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
                           {formatNumber(channel.current?.subscriberCount ?? 0)}
-                        </td>
-                        <td className="text-right tabular-nums">
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
                           {formatNumber(channel.current?.viewCount ?? 0)}
-                        </td>
-                        <td className="text-right tabular-nums">
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
                           {formatNumber(channel.period?.views ?? 0)}
-                        </td>
-                        <td className="text-right tabular-nums">
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
                           {formatNumber(channel.period?.engagedViews ?? 0)}
-                        </td>
-                        <td className="text-right tabular-nums">
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
                           {formatNumber(channel.period?.likes ?? 0)}
-                        </td>
-                        <td className="text-right tabular-nums">
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
                           {formatNumber(channel.period?.comments ?? 0)}
-                        </td>
-                        <td className="text-right tabular-nums">
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
                           {formatSigned(channel.period?.netSubscribers ?? 0)}
-                        </td>
-                        <td>
+                        </TableCell>
+                        <TableCell>
                           <StatusPill status={channel.status} />
-                        </td>
-                        <td>
+                        </TableCell>
+                        <TableCell>
                           <div className="flex items-center justify-end gap-1">
                             {channel.status === "reconnect" ? (
-                              <button
+                              <Button
+                                variant="ghost"
+                                size="xs"
                                 type="button"
-                                className="btn btn-ghost btn-xs text-warning"
+                                className="text-warning"
                                 onClick={connect}
                               >
                                 Reconnect
-                              </button>
+                              </Button>
                             ) : null}
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="xs"
                               type="button"
-                              className="btn btn-ghost btn-xs gap-1 text-error hover:bg-error/10"
+                              className="gap-1 text-destructive hover:bg-destructive/10"
                               onClick={() =>
                                 disconnectMutation.mutate(channel.channelId)
                               }
@@ -343,13 +362,13 @@ export function YoutubePage({
                             >
                               <Unplug className="size-3.5" />
                               Disconnect
-                            </button>
+                            </Button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </div>
             <YoutubeActivityChart
@@ -362,7 +381,7 @@ export function YoutubePage({
             />
           </>
         )}
-        <p className="text-xs text-base-content/50">
+        <p className="text-xs text-muted-foreground">
           YouTube may correct an end date after the last complete day. Data
           refreshes for up to five minutes from cache.
         </p>

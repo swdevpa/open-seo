@@ -6,7 +6,9 @@ import {
   MAX_TRACKED_KEYWORD_LENGTH,
   rankAlertSettingsSchema,
 } from "@/shared/rank-tracking";
+import { comparePeriodSchema } from "@/types/schemas/rank-tracking-search";
 import { domainField } from "@/types/schemas/domain";
+import { scheduleTimeSchema } from "@/types/schemas/schedule-time";
 
 // ---------------------------------------------------------------------------
 // DB-derived types
@@ -39,6 +41,8 @@ export interface RankTrackingDeviceResult {
 export interface RankTrackingRow {
   trackingKeywordId: string;
   keyword: string;
+  matchCase: boolean;
+  pinned: boolean;
   searchVolume: number | null;
   keywordDifficulty: number | null;
   cpc: number | null;
@@ -49,6 +53,8 @@ export interface RankTrackingRow {
 // ---------------------------------------------------------------------------
 // Validation schemas
 // ---------------------------------------------------------------------------
+
+export type RankCheckScheduleTime = z.infer<typeof scheduleTimeSchema>;
 
 const devicesEnum = z.enum(rankTrackingConfigs.devices.enumValues);
 const scheduleEnum = z.enum(rankTrackingConfigs.scheduleInterval.enumValues);
@@ -73,6 +79,7 @@ export const createConfigSchema = z.object({
   devices: devicesEnum.optional(),
   serpDepth: z.number().int().min(10).max(100).multipleOf(10),
   scheduleInterval: scheduleEnum.optional(),
+  scheduleTime: scheduleTimeSchema.optional(),
 });
 
 export const updateConfigSchema = z.object({
@@ -85,6 +92,7 @@ export const updateConfigSchema = z.object({
   devices: devicesEnum.optional(),
   serpDepth: z.number().int().min(10).max(100).multipleOf(10).optional(),
   scheduleInterval: scheduleEnum.optional(),
+  scheduleTime: scheduleTimeSchema.optional(),
   isActive: z.boolean().optional(),
 });
 
@@ -93,9 +101,6 @@ export const triggerCheckSchema = z.object({
   configId: z.string().uuid(),
   keywordIds: z.array(z.string().uuid()).max(2000).optional(),
 });
-
-export const comparePeriodSchema = z.enum(["1d", "7d", "30d", "90d"]);
-export type ComparePeriod = z.infer<typeof comparePeriodSchema>;
 
 export const getLatestResultsSchema = z.object({
   projectId: z.string().uuid(),
@@ -120,12 +125,20 @@ export const addKeywordsSchema = z.object({
     .array(z.string().min(1).max(MAX_TRACKED_KEYWORD_LENGTH))
     .min(1)
     .max(2000),
+  matchCase: z.boolean().optional(),
 });
 
 export const removeKeywordsSchema = z.object({
   projectId: z.string().uuid(),
   configId: z.string().uuid(),
   keywordIds: z.array(z.string().uuid()).min(1).max(2000),
+});
+
+export const setKeywordsPinnedSchema = z.object({
+  projectId: z.string().uuid(),
+  configId: z.string().uuid(),
+  keywordIds: z.array(z.string().uuid()).min(1).max(2000),
+  pinned: z.boolean(),
 });
 
 export const refreshMetricsSchema = z.object({

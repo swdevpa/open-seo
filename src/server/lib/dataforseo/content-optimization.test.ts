@@ -1,15 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  contentParsingLive: vi.fn(
-    (_requests: Array<{ url: string }>): Promise<unknown> =>
+  dataforseoPost: vi.fn(
+    (_path: string, _tasks: Array<{ url: string }>): Promise<unknown> =>
       Promise.resolve(undefined),
   ),
   fetchLiveSerp: vi.fn(),
 }));
 
 vi.mock("@/server/lib/dataforseo/core", () => ({
-  onPageApi: () => ({ contentParsingLive: mocks.contentParsingLive }),
+  dataforseoPost: mocks.dataforseoPost,
 }));
 
 vi.mock("@/server/lib/dataforseo/serp", () => ({
@@ -20,7 +20,6 @@ import { fetchContentOptimizationSource } from "./content-optimization";
 
 describe("fetchContentOptimizationSource", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     mocks.fetchLiveSerp.mockResolvedValue({
       data: [
         {
@@ -48,9 +47,9 @@ describe("fetchContentOptimizationSource", () => {
         costUsd: 0.05,
       },
     });
-    mocks.contentParsingLive.mockImplementation(
-      async (requests: Array<{ url: string }>) => {
-        const url = requests[0]?.url ?? "";
+    mocks.dataforseoPost.mockImplementation(
+      async (_path: string, tasks: Array<{ url: string }>) => {
+        const url = tasks[0]?.url ?? "";
         const isTarget = url.includes("example.com/page");
         return {
           status_code: 20000,
@@ -91,8 +90,8 @@ describe("fetchContentOptimizationSource", () => {
       languageCode: "en",
       depth: 10,
     });
-    expect(mocks.contentParsingLive).toHaveBeenCalledTimes(2);
-    const firstRequest = mocks.contentParsingLive.mock.calls[0]?.[0];
+    expect(mocks.dataforseoPost).toHaveBeenCalledTimes(2);
+    const firstRequest = mocks.dataforseoPost.mock.calls[0]?.[1];
     expect(firstRequest?.[0]).toMatchObject({
       markdown_view: true,
       disable_cookie_popup: true,

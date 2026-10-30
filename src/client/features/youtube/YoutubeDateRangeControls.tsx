@@ -1,3 +1,5 @@
+import { Input } from "@/client/components/ui/input";
+import { Button } from "@/client/components/ui/button";
 import { useEffect, useState, type FormEvent } from "react";
 import { CalendarDays } from "lucide-react";
 
@@ -29,34 +31,34 @@ export function YoutubeDateRangeControls({
       onSubmit={submit}
       aria-label="YouTube date range"
     >
-      <label className="form-control w-36">
-        <span className="label py-0.5 text-xs text-base-content/60">From</span>
-        <input
+      <label className="flex w-36 flex-col">
+        <span className="py-0.5 text-xs text-muted-foreground">From</span>
+        <Input
           type="date"
-          className="input input-bordered input-sm"
           value={draftStartDate}
           onChange={(event) => setDraftStartDate(event.target.value)}
         />
       </label>
-      <label className="form-control w-36">
-        <span className="label py-0.5 text-xs text-base-content/60">To</span>
-        <input
+      <label className="flex w-36 flex-col">
+        <span className="py-0.5 text-xs text-muted-foreground">To</span>
+        <Input
           type="date"
-          className="input input-bordered input-sm"
           value={draftEndDate}
           onChange={(event) => setDraftEndDate(event.target.value)}
         />
       </label>
-      <button
+      <Button
+        variant="outline"
+        size="sm"
         type="submit"
-        className="btn btn-outline btn-sm gap-1.5"
+        className="gap-1.5"
         disabled={
           !draftStartDate || !draftEndDate || draftStartDate > draftEndDate
         }
       >
         <CalendarDays className="size-4" />
         Apply
-      </button>
+      </Button>
     </form>
   );
 }

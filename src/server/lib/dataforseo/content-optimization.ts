@@ -1,14 +1,14 @@
 /* eslint-disable max-lines -- The DataForSEO adapter keeps parsing and billing extraction in one boundary. */
 
-import { OnPageContentParsingLiveRequestInfo } from "dataforseo-client";
 import { AppError } from "@/server/lib/errors";
-import { onPageApi } from "@/server/lib/dataforseo/core";
+import { dataforseoPost } from "@/server/lib/dataforseo/core";
 import {
   assertOk,
   buildTaskBilling,
   DataforseoChargedTaskError,
   isRecord,
   type DataforseoApiResponse,
+  type DataforseoItemsTask,
 } from "@/server/lib/dataforseo/envelope";
 import { fetchLiveSerp, type SerpLiveItem } from "@/server/lib/dataforseo/serp";
 import {
@@ -306,7 +306,10 @@ function extractStructuredInternalLinks(
       if (key === "url" && typeof child === "string") {
         try {
           const link = new URL(child, pageUrl);
-          if (link.hostname === pageHost && normalizeUrl(link.toString()) !== normalizeUrl(pageUrl)) {
+          if (
+            link.hostname === pageHost &&
+            normalizeUrl(link.toString()) !== normalizeUrl(pageUrl)
+          ) {
             link.hash = "";
             links.add(link.toString());
           }
@@ -315,7 +318,11 @@ function extractStructuredInternalLinks(
         }
       } else if (key === "urls") {
         visit(child);
-      } else if (key === "primary_content" || key === "secondary_content" || key === "table_content") {
+      } else if (
+        key === "primary_content" ||
+        key === "secondary_content" ||
+        key === "table_content"
+      ) {
         visit(child);
       }
     }
@@ -393,13 +400,16 @@ async function fetchContentPage(input: {
   title?: string | null;
   description?: string | null;
 }): Promise<PageParseResult> {
-  const response = await onPageApi().contentParsingLive([
-    new OnPageContentParsingLiveRequestInfo({
-      url: input.url,
-      markdown_view: true,
-      disable_cookie_popup: true,
-    }),
-  ]);
+  const response = await dataforseoPost<DataforseoItemsTask<unknown>>(
+    "/v3/on_page/content_parsing/live",
+    [
+      {
+        url: input.url,
+        markdown_view: true,
+        disable_cookie_popup: true,
+      },
+    ],
+  );
   const task = assertOk(response);
   const billing = buildTaskBilling(task);
 

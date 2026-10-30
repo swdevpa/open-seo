@@ -43,11 +43,11 @@ export function YoutubeActivityChart({
     seriesCoverage.includedChannels < seriesCoverage.totalChannels;
 
   return (
-    <div className="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm sm:p-5">
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="font-semibold">{title}</h2>
-          <p className="text-xs text-base-content/60">
+          <p className="text-xs text-muted-foreground">
             {subtitle} · {range.startDate} to {range.endDate}
           </p>
           {hasPartialCoverage ? (
@@ -58,11 +58,11 @@ export function YoutubeActivityChart({
           ) : null}
         </div>
         {isFetching ? (
-          <Loader2 className="size-4 animate-spin text-base-content/45" />
+          <Loader2 className="size-4 animate-spin text-muted-foreground" />
         ) : null}
       </div>
       {series.length === 0 ? (
-        <div className="grid h-80 place-items-center text-sm text-base-content/55">
+        <div className="grid h-80 place-items-center text-sm text-muted-foreground">
           No activity data for this range.
         </div>
       ) : (
@@ -91,10 +91,10 @@ export function YoutubeActivityChart({
                 width={48}
               />
               <Tooltip
-                formatter={(
-                  value: number | undefined,
-                  name: string | undefined,
-                ) => [formatNumber(value ?? 0), name ?? ""]}
+                formatter={(value, name) => [
+                  formatNumber(Number(value ?? 0)),
+                  String(name ?? ""),
+                ]}
                 labelFormatter={(label) => String(label)}
               />
               <Line

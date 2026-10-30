@@ -8,7 +8,6 @@ export type CreditFeature =
   | "ai_prompt_responses"
   | "local_seo"
   | "content_optimization"
-  | "onboarding"
   | "agent";
 
 const CREDIT_FEATURE_LABELS: Record<string, string> = {
@@ -22,6 +21,8 @@ const CREDIT_FEATURE_LABELS: Record<string, string> = {
   ai_search: "AI Search",
   local_seo: "Local SEO",
   content_optimization: "Content Optimization",
+  // The onboarding chat is gone, but historical usage events still carry this
+  // key — keep the label so old billing breakdowns don't render "Other".
   onboarding: "Onboarding",
   agent: "SAM Agent",
 };
@@ -48,12 +49,13 @@ export function mapDataforseoPathToCreditFeature(
         ? "local_seo"
         : "keyword_research";
     case "ai_optimization":
-      // llm_mentions/* are brand-citation lookups; every other ai_optimization
-      // endpoint is a provider /llm_responses prompt response (chat_gpt, claude,
-      // gemini, perplexity).
-      return normalizedPath[2] === "llm_mentions"
-        ? "ai_citations"
-        : "ai_prompt_responses";
+      // llm_mentions/* are brand-citation lookups and ai_keyword_data/* is
+      // keyword volume research; every other ai_optimization endpoint is a
+      // provider /llm_responses prompt response (chat_gpt, claude, gemini,
+      // perplexity).
+      if (normalizedPath[2] === "llm_mentions") return "ai_citations";
+      if (normalizedPath[2] === "ai_keyword_data") return "keyword_research";
+      return "ai_prompt_responses";
     case "business_data":
       return "local_seo";
     case "keywords_data":

@@ -137,14 +137,16 @@ describe("buildContentOptimizationReport", () => {
     );
 
     expect(report.version).toBe(2);
-    expect(report.entityCoverage.naturalLanguageEntities.length).toBeGreaterThan(0);
+    expect(
+      report.entityCoverage.naturalLanguageEntities.length,
+    ).toBeGreaterThan(0);
     expect(report.entityCoverage.keywordVariations).toContainEqual(
       expect.objectContaining({ variation: "content strategy" }),
     );
     expect(report.topicAndClassification.yourPage.category).toBe("Guide");
-    expect(report.topicAndClassification.topicalAuthorityQuestions.definition).toContain(
-      "What is content optimization?",
-    );
+    expect(
+      report.topicAndClassification.topicalAuthorityQuestions.definition,
+    ).toContain("What is content optimization?");
     expect(report.internalLinking.existingInternalLinks).toContain(
       "https://example.com/related",
     );

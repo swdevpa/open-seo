@@ -5,22 +5,28 @@ import {
   useQuery,
 } from "@tanstack/react-query";
 import { createColumnHelper } from "@tanstack/react-table";
-import { Loader2 } from "lucide-react";
-import {
-  AppDataTable,
-  useAppTable,
-} from "@/client/components/table/AppDataTable";
+import { QueryError } from "@/client/components/QueryState";
+import { SkeletonTableRows } from "@/client/components/SkeletonPresets";
+import { DataTable, useDataTable } from "@/client/components/table/DataTable";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
 import {
   formatCount,
   formatPosition,
 } from "@/client/features/search-performance/SearchPerformanceColumns";
+import { GoogleConnectionCard } from "@/client/features/integrations/GoogleConnectionCard";
 import {
   runExport,
   type ExportTarget,
 } from "@/client/features/search-performance/SearchPerformanceParts";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/client/components/ui/select";
 import { getContentDecayReport } from "@/serverFunctions/searchPerformance";
+import { CONTENT_DECAY_MONTHS } from "@/types/schemas/search-performance";
 
 type ContentDecayReport = Extract<
   Awaited<ReturnType<typeof getContentDecayReport>>,
@@ -104,10 +110,10 @@ function buildColumns(months: string[]) {
 export function exportContentDecay(
   report: ContentDecayReport,
   target: ExportTarget,
-): void {
-  runExport(
+): Promise<void> {
+  return runExport(
     {
-      filename: `search-performance-content-decay-${report.months[0] ?? ""}-to-${report.months.at(-1) ?? ""}.csv`,
+      filename: `search-performance-content-decay-${report.months[0] ?? ""}-to-${report.months.at(-1) ?? ""}`,
       headers: [
         "Page",
         ...report.months.map((month) => `Clicks ${month}`),
@@ -131,6 +137,47 @@ export function exportContentDecay(
   );
 }
 
+const MONTH_OPTIONS = CONTENT_DECAY_MONTHS.map((months) => ({
+  value: String(months),
+  label: `${months} months`,
+}));
+
+/** Toolbar select for how many months of decline to look for. */
+export function ContentDecayMonthsSelect({
+  months,
+  onMonthsChange,
+}: {
+  months: number;
+  onMonthsChange: (months: number) => void;
+}) {
+  return (
+    <div className="ml-auto flex items-center">
+      <Select
+        items={MONTH_OPTIONS}
+        value={String(months)}
+        onValueChange={(value) => {
+          if (value != null) onMonthsChange(Number(value));
+        }}
+      >
+        <SelectTrigger
+          size="sm"
+          className="w-36"
+          aria-label="Months of decline"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {MONTH_OPTIONS.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 export function ContentDecayPanel({
   projectId,
   months,
@@ -142,29 +189,26 @@ export function ContentDecayPanel({
     ...contentDecayQueryOptions(projectId, months),
     placeholderData: keepPreviousData,
   });
+  if (query.isPending) {
+    return <SkeletonTableRows className="p-4" />;
+  }
   if (query.isError) {
     return (
       <div className="p-4">
-        <div className="alert alert-error">
-          <span className="text-sm">
-            {getStandardErrorMessage(query.error)}
-          </span>
-        </div>
-      </div>
-    );
-  }
-  if (!query.data) {
-    return (
-      <div className="flex items-center gap-2 p-8 text-sm text-base-content/60">
-        <Loader2 className="size-4 animate-spin" /> Loading…
+        <QueryError
+          error={query.error}
+          fallback="Failed to load content decay"
+          onRetry={() => void query.refetch()}
+          isRetrying={query.isFetching}
+        />
       </div>
     );
   }
   if (!query.data.connected) {
     return (
-      <p className="p-6 text-sm text-base-content/60">
-        Search Console is not connected.
-      </p>
+      <div className="max-w-2xl p-4">
+        <GoogleConnectionCard provider="gsc" projectId={projectId} />
+      </div>
     );
   }
   return <ContentDecayTable report={query.data} />;
@@ -172,7 +216,7 @@ export function ContentDecayPanel({
 
 function ContentDecayTable({ report }: { report: ContentDecayReport }) {
   const columns = useMemo(() => buildColumns(report.months), [report.months]);
-  const table = useAppTable({
+  const table = useDataTable({
     data: report.rows,
     columns,
     withSorting: true,
@@ -180,21 +224,18 @@ function ContentDecayTable({ report }: { report: ContentDecayReport }) {
   });
   return (
     <div className="space-y-2 p-4">
-      <p className="text-sm text-base-content/70">
+      <p className="text-sm text-muted-foreground">
         Pages that lost clicks in every month from {report.months[1] ?? ""} to{" "}
         {report.months.at(-1) ?? ""}, each compared with the month before. Pages
         under 10 clicks in {report.months[0] ?? ""} are skipped.
         {report.auditAvailable ? "" : " Run a site audit to see word counts."}
       </p>
-      <AppDataTable
+      <DataTable
         table={table}
-        className="table table-zebra table-sm"
-        wrapperClassName="overflow-x-auto"
-        empty={
-          <p className="p-6 text-sm text-base-content/60">
-            No page lost clicks in every one of these months.
-          </p>
-        }
+        empty={{
+          title: "No decaying pages",
+          description: "No page lost clicks in every one of these months.",
+        }}
       />
     </div>
   );

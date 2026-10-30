@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getAuth } from "@/lib/auth";
+import { mintGoogleAccessToken } from "@/server/lib/googleAccessToken";
 import {
   YoutubeApiError,
   YoutubeMalformedResponseError,
@@ -181,14 +181,11 @@ async function getYoutubeAccessToken(opts: {
   userId: string;
   youtubeAccountId: string;
 }): Promise<string> {
-  let result: { accessToken?: string } | undefined;
   try {
-    result = await getAuth().api.getAccessToken({
-      body: {
-        providerId: YOUTUBE_OAUTH_PROVIDER_ID,
-        userId: opts.userId,
-        accountId: opts.youtubeAccountId,
-      },
+    return await mintGoogleAccessToken({
+      providerId: YOUTUBE_OAUTH_PROVIDER_ID,
+      userId: opts.userId,
+      accountId: opts.youtubeAccountId,
     });
   } catch (error) {
     throw new YoutubeTokenError(
@@ -196,10 +193,6 @@ async function getYoutubeAccessToken(opts: {
       error,
     );
   }
-  if (!result?.accessToken) {
-    throw new YoutubeTokenError("YouTube returned no access token.");
-  }
-  return result.accessToken;
 }
 
 function memoizedYoutubeAccessToken(opts: {

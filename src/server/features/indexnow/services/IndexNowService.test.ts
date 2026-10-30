@@ -1,131 +1,239 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { IndexNowService } from "./IndexNowService";
 
-const mocks = vi.hoisted(() => ({
-  getProjectForOrganization: vi.fn(),
-  getAuditForProject: vi.fn(),
-  getPagesForAudit: vi.fn(),
-  fetch: vi.fn(),
+const { getProject, setKey, getAudit, getAuditPages } = vi.hoisted(() => ({
+  getProject: vi.fn(),
+  setKey: vi.fn(),
+  getAudit: vi.fn(),
+  getAuditPages: vi.fn(),
 }));
-
 vi.mock("@/server/features/projects/repositories/ProjectRepository", () => ({
   ProjectRepository: {
-    getProjectForOrganization: mocks.getProjectForOrganization,
+    getProjectForOrganization: getProject,
+    setIndexNowKeyIfMissing: setKey,
   },
 }));
-
 vi.mock("@/server/features/audit/repositories/AuditRepository", () => ({
   AuditRepository: {
-    getAuditForProject: mocks.getAuditForProject,
-    getPagesForAudit: mocks.getPagesForAudit,
+    getAuditForProject: getAudit,
+    getPagesForAudit: getAuditPages,
   },
+}));
+// The SSRF guard resolves DNS; these tests only cover IndexNow behavior.
+vi.mock("@/server/lib/audit/url-policy", () => ({
+  normalizeAndValidateStartUrl: async (url: string) => url,
 }));
 
 const KEY = "abc123def456";
+const scope = { projectId: "p1", organizationId: "o1" };
+const fetchMock = vi.fn<typeof fetch>();
 
-const postedBodySchema = z.object({
-  host: z.string(),
-  key: z.string(),
-  keyLocation: z.string(),
-  urlList: z.array(z.string()),
-});
+const ENGINES = ["www.bing.com", "yandex.com", "indexnow.yep.com"];
+const engineOf = (input: Parameters<typeof fetch>[0]) => {
+  const { hostname } = new URL(
+    input instanceof Request ? input.url : input.toString(),
+  );
+  return ENGINES.includes(hostname) ? hostname : null;
+};
 
-function postedBodies() {
-  return mocks.fetch.mock.calls.map((call: unknown[]) => {
-    const init = z.object({ body: z.string() }).parse(call[1]);
-    return postedBodySchema.parse(JSON.parse(init.body));
+// Key files answer with `keyFile`; engines answer in ENGINES order with
+// `engines`, and with 200 past the end of the list.
+function respond(keyFile: Response, ...engines: Response[]) {
+  fetchMock.mockImplementation(async (input) => {
+    const engine = engineOf(input);
+    if (!engine) return keyFile.clone();
+    return (
+      engines[ENGINES.indexOf(engine)]?.clone() ??
+      new Response(null, { status: 200 })
+    );
   });
 }
 
-describe("IndexNowService", () => {
-  beforeEach(() => {
-    vi.stubGlobal("fetch", mocks.fetch);
-    mocks.getProjectForOrganization.mockResolvedValue({
-      id: "project_1",
-      domain: "acme.com",
-      indexNowKey: KEY,
+function submissions() {
+  return fetchMock.mock.calls.flatMap(([input, init]) => {
+    const engine = engineOf(input);
+    if (!engine) return [];
+    const body: unknown =
+      typeof init?.body === "string" ? JSON.parse(init.body) : null;
+    return [{ engine, body }];
+  });
+}
+
+beforeEach(() => {
+  vi.stubGlobal("fetch", fetchMock);
+  getProject.mockResolvedValue({ domain: "example.com", indexnowKey: KEY });
+  respond(new Response(KEY));
+});
+
+describe("IndexNowService.submitUrls", () => {
+  it("submits one request per host on the project's website and skips the rest", async () => {
+    const result = await IndexNowService.submitUrls(scope, [
+      "https://example.com/a#section",
+      "https://www.example.com/b",
+      "https://example.com/a",
+      "https://notexample.com/c",
+      "not a url",
+    ]);
+
+    expect(submissions().map((submission) => submission.body)).toEqual([
+      { host: "example.com", key: KEY, urlList: ["https://example.com/a"] },
+      {
+        host: "www.example.com",
+        key: KEY,
+        urlList: ["https://www.example.com/b"],
+      },
+    ]);
+    expect(result.hosts.map((host) => host.status)).toEqual([
+      "submitted",
+      "submitted",
+    ]);
+    expect(result.skipped).toHaveLength(2);
+  });
+
+  it("creates the key on first use and returns the saved one", async () => {
+    getProject.mockResolvedValueOnce({
+      domain: "example.com",
+      indexnowKey: null,
     });
-    mocks.fetch.mockResolvedValue(new Response(null, { status: 200 }));
-  });
 
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("posts one IndexNow request per host and drops URLs outside the domain", async () => {
-    const submission = await IndexNowService.submitUrls("org_1", "project_1", [
-      "https://acme.com/a",
-      "https://acme.com/a#section",
-      "https://www.acme.com/b",
-      "https://notacme.com/c",
+    const result = await IndexNowService.submitUrls(scope, [
+      "https://example.com/a",
     ]);
 
-    expect(postedBodies()).toEqual([
-      {
-        host: "acme.com",
-        key: KEY,
-        keyLocation: `https://acme.com/${KEY}.txt`,
-        urlList: ["https://acme.com/a"],
-      },
-      {
-        host: "www.acme.com",
-        key: KEY,
-        keyLocation: `https://www.acme.com/${KEY}.txt`,
-        urlList: ["https://www.acme.com/b"],
-      },
-    ]);
-    expect(submission.rejectedUrls).toEqual(["https://notacme.com/c"]);
-    expect(submission.submittedCount).toBe(2);
+    expect(setKey).toHaveBeenCalledOnce();
+    // The re-read wins, so a key saved by a parallel call is the one used.
+    expect(result).toMatchObject({ key: KEY, keyCreated: true });
   });
 
-  it("reports a rejected key without counting those URLs as submitted", async () => {
-    mocks.fetch.mockResolvedValue(new Response(null, { status: 403 }));
+  it("refuses a project without a website before creating a key", async () => {
+    getProject.mockResolvedValue({ domain: null, indexnowKey: null });
 
-    const submission = await IndexNowService.submitUrls("org_1", "project_1", [
-      "https://acme.com/a",
-    ]);
-
-    expect(submission.submittedCount).toBe(0);
-    expect(submission.results[0]).toMatchObject({ ok: false, status: 403 });
+    await expect(
+      IndexNowService.submitUrls(scope, ["https://example.com/a"]),
+    ).rejects.toThrow("Add the project's website");
+    expect(setKey).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ["is missing", new Response("Not found", { status: 404 })],
+    ["holds a different page", new Response("<html>Home</html>")],
+    [
+      "redirects",
+      new Response(null, {
+        status: 301,
+        headers: { location: "https://www.example.com/" },
+      }),
+    ],
+    [
+      "redirects to the same file on www",
+      new Response(null, {
+        status: 301,
+        headers: { location: `https://www.example.com/${KEY}.txt` },
+      }),
+    ],
+  ])("doesn't submit when the key file %s", async (_case, keyFile) => {
+    respond(keyFile);
+
+    const result = await IndexNowService.submitUrls(scope, [
+      "https://example.com/a",
+    ]);
+
+    expect(submissions()).toEqual([]);
+    expect(result.hosts[0]?.status).toBe("failed");
+  });
+
+  it("submits anyway when a bot wall hides the key file", async () => {
+    respond(
+      new Response("Forbidden", { status: 403 }),
+      new Response(null, { status: 202 }),
+    );
+
+    const result = await IndexNowService.submitUrls(scope, [
+      "https://example.com/a",
+    ]);
+
+    expect(submissions()).toHaveLength(1);
+    expect(result.hosts[0]?.status).toBe("submitted");
+  });
+
+  it("moves on to the next engine when one rate-limits", async () => {
+    respond(
+      new Response(KEY),
+      new Response(null, { status: 429 }),
+      new Response(null, { status: 202 }),
+    );
+
+    const result = await IndexNowService.submitUrls(scope, [
+      "https://example.com/a",
+    ]);
+
+    expect(submissions().map((submission) => submission.engine)).toEqual([
+      "www.bing.com",
+      "yandex.com",
+    ]);
+    expect(result.hosts[0]?.status).toBe("submitted");
+  });
+
+  it("reports a key IndexNow rejects without trying other engines", async () => {
+    respond(new Response(KEY), new Response(null, { status: 403 }));
+
+    const result = await IndexNowService.submitUrls(scope, [
+      "https://example.com/a",
+    ]);
+
+    expect(submissions()).toHaveLength(1);
+    expect(result.hosts[0]?.status).toBe("failed");
+    expect(result.hosts[0]?.message).toContain("https://example.com");
+  });
+});
+
+describe("IndexNowService.checkKeyFiles", () => {
+  it("tells a host that forwards to www apart from a missing file", async () => {
+    fetchMock.mockImplementation(async (input) =>
+      input === `https://example.com/${KEY}.txt`
+        ? new Response(null, {
+            status: 301,
+            headers: { location: `https://www.example.com/${KEY}.txt` },
+          })
+        : new Response("Not found", { status: 404 }),
+    );
+
+    const result = await IndexNowService.checkKeyFiles(scope);
+
+    expect(result.hosts).toEqual([
+      { host: "example.com", status: "moved" },
+      { host: "www.example.com", status: "missing" },
+    ]);
+  });
+});
+
+describe("IndexNowService.submitAuditPages", () => {
   it("submits only indexable, successfully fetched audit pages", async () => {
-    mocks.getAuditForProject.mockResolvedValue({ id: "audit_1" });
-    mocks.getPagesForAudit.mockResolvedValue([
-      { url: "https://acme.com/ok", statusCode: 200, isIndexable: true },
-      { url: "https://acme.com/noindex", statusCode: 200, isIndexable: false },
-      { url: "https://acme.com/missing", statusCode: 404, isIndexable: true },
+    getAudit.mockResolvedValue({ id: "a1" });
+    getAuditPages.mockResolvedValue([
+      { url: "https://example.com/ok", statusCode: 200, isIndexable: true },
       {
-        url: "https://acme.com/blocked",
+        url: "https://example.com/noindex",
+        statusCode: 200,
+        isIndexable: false,
+      },
+      {
+        url: "https://example.com/missing",
+        statusCode: 404,
+        isIndexable: true,
+      },
+      {
+        url: "https://example.com/blocked",
         statusCode: 200,
         isIndexable: true,
         fetchClass: "blocked",
       },
     ]);
 
-    await IndexNowService.submitAuditPages("org_1", "project_1", "audit_1");
+    await IndexNowService.submitAuditPages(scope, "a1");
 
-    expect(postedBodies().map((body) => body.urlList)).toEqual([
-      ["https://acme.com/ok"],
+    expect(submissions().map((submission) => submission.body)).toEqual([
+      { host: "example.com", key: KEY, urlList: ["https://example.com/ok"] },
     ]);
-  });
-
-  it("follows a redirect to find the key file", async () => {
-    mocks.fetch
-      .mockResolvedValueOnce(
-        new Response(null, {
-          status: 301,
-          headers: { location: `https://www.acme.com/${KEY}.txt` },
-        }),
-      )
-      .mockResolvedValueOnce(new Response(`${KEY}\n`, { status: 200 }));
-
-    const result = await IndexNowService.checkKeyFile("org_1", "project_1");
-
-    expect(result).toMatchObject({
-      ok: true,
-      url: `https://www.acme.com/${KEY}.txt`,
-    });
   });
 });

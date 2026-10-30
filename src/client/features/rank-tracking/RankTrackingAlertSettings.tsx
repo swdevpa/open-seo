@@ -1,7 +1,16 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
-import { Bell } from "lucide-react";
+import { Bell, ChevronRight } from "lucide-react";
+import { Button } from "@/client/components/ui/button";
+import { Checkbox } from "@/client/components/ui/checkbox";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/client/components/ui/collapsible";
+import { Input } from "@/client/components/ui/input";
+import { Label } from "@/client/components/ui/label";
 import {
   sendRankTrackingTestAlert,
   updateRankTrackingAlerts,
@@ -22,6 +31,7 @@ export function RankTrackingAlertSettings({
   projectId: string;
   onSaved: () => void;
 }) {
+  const webhookUrlId = useId();
   const [webhookUrl, setWebhookUrl] = useState(config.alertWebhookUrl ?? "");
   const [dropEnabled, setDropEnabled] = useState(
     config.alertPositionDrop !== null,
@@ -76,96 +86,98 @@ export function RankTrackingAlertSettings({
   });
 
   return (
-    <details className="collapse collapse-arrow border border-base-300 bg-base-100">
-      <summary className="collapse-title flex items-center gap-2 text-sm font-medium">
-        <Bell className="size-4" />
+    <Collapsible className="rounded-xl border bg-card">
+      <CollapsibleTrigger className="group flex w-full items-center gap-2 px-4 py-3 text-sm font-medium">
+        <ChevronRight
+          className="size-4 text-muted-foreground transition-transform group-data-[panel-open]:rotate-90"
+          aria-hidden
+        />
+        <Bell className="size-4" aria-hidden />
         Webhook alerts
-        <span className="text-base-content/60 font-normal">
+        <span className="font-normal text-muted-foreground">
           {config.alertWebhookUrl ? "On" : "Off"}
         </span>
-      </summary>
-      <form
-        className="collapse-content flex flex-col gap-3"
-        onSubmit={(event) => {
-          event.preventDefault();
-          saveMutation.mutate();
-        }}
-      >
-        <p className="text-sm text-base-content/70">
-          After each scheduled check, OpenSEO posts one JSON payload with every
-          keyword that matched a rule. Slack-compatible webhooks show the{" "}
-          <code>text</code> summary.
-        </p>
-        <label className="flex flex-col gap-1 text-sm">
-          Webhook URL
-          <input
-            type="url"
-            className="input input-bordered input-sm w-full max-w-xl"
-            placeholder="https://hooks.example.com/..."
-            value={webhookUrl}
-            onChange={(event) => setWebhookUrl(event.target.value)}
-          />
-          <span className="text-xs text-base-content/60">
-            Must be a public http(s) URL. Leave empty to turn alerts off.
-          </span>
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            className="checkbox checkbox-sm"
-            checked={dropEnabled}
-            onChange={(event) => setDropEnabled(event.target.checked)}
-          />
-          Position drops by at least
-          <input
-            type="number"
-            min={1}
-            max={100}
-            className="input input-bordered input-xs w-16"
-            value={positionDrop}
-            disabled={!dropEnabled}
-            onChange={(event) => setPositionDrop(Number(event.target.value))}
-          />
-          places
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            className="checkbox checkbox-sm"
-            checked={leftTop10}
-            onChange={(event) => setLeftTop10(event.target.checked)}
-          />
-          Falls out of the top 10
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            className="checkbox checkbox-sm"
-            checked={enteredTop3}
-            onChange={(event) => setEnteredTop3(event.target.checked)}
-          />
-          Enters the top 3
-        </label>
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            className="btn btn-primary btn-sm"
-            disabled={!isDirty || saveMutation.isPending}
-          >
-            Save
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            disabled={
-              !config.alertWebhookUrl || isDirty || testMutation.isPending
-            }
-            onClick={() => testMutation.mutate()}
-          >
-            Send test alert
-          </button>
-        </div>
-      </form>
-    </details>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <form
+          className="flex flex-col gap-3 border-t px-4 py-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            saveMutation.mutate();
+          }}
+        >
+          <p className="text-sm text-muted-foreground">
+            After each scheduled check, OpenSEO posts one JSON payload with
+            every keyword that matched a rule. Slack-compatible webhooks show
+            the <code>text</code> summary.
+          </p>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor={webhookUrlId}>Webhook URL</Label>
+            <Input
+              id={webhookUrlId}
+              type="url"
+              className="max-w-xl"
+              placeholder="https://hooks.example.com/..."
+              value={webhookUrl}
+              onChange={(event) => setWebhookUrl(event.target.value)}
+            />
+            <span className="text-xs text-muted-foreground">
+              Must be a public http(s) URL. Leave empty to turn alerts off.
+            </span>
+          </div>
+          <Label className="font-normal">
+            <Checkbox
+              checked={dropEnabled}
+              onCheckedChange={(checked) => setDropEnabled(checked)}
+            />
+            Position drops by at least
+            <Input
+              type="number"
+              min={1}
+              max={100}
+              className="h-7 w-16"
+              value={positionDrop}
+              disabled={!dropEnabled}
+              onChange={(event) => setPositionDrop(Number(event.target.value))}
+            />
+            places
+          </Label>
+          <Label className="font-normal">
+            <Checkbox
+              checked={leftTop10}
+              onCheckedChange={(checked) => setLeftTop10(checked)}
+            />
+            Falls out of the top 10
+          </Label>
+          <Label className="font-normal">
+            <Checkbox
+              checked={enteredTop3}
+              onCheckedChange={(checked) => setEnteredTop3(checked)}
+            />
+            Enters the top 3
+          </Label>
+          <div className="flex gap-2">
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!isDirty}
+              pending={saveMutation.isPending}
+            >
+              Save
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={!config.alertWebhookUrl || isDirty}
+              pending={testMutation.isPending}
+              onClick={() => testMutation.mutate()}
+            >
+              Send test alert
+            </Button>
+          </div>
+        </form>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }

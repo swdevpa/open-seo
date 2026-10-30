@@ -1,5 +1,6 @@
 /* eslint-disable max-lines -- The deterministic report keeps all scoring and section rules together. */
 
+import { sort } from "remeda";
 import {
   type ContentOptimizationBenchmark,
   type ContentOptimizationPageMetrics,
@@ -215,38 +216,34 @@ function buildTerms(
     }
   }
 
-  return [...totals.entries()]
-    .map(([term, counts]) => {
-      const competitorAverageFrequency = round(
-        counts.total / competitors.length,
-      );
-      const competitorCoverage = round(counts.pages / competitors.length, 2);
-      const targetFrequency = target.termCounts[term] ?? 0;
-      const importance = round(
-        competitorCoverage * Math.max(1, competitorAverageFrequency),
-        2,
-      );
+  return sort(
+    [...totals.entries()]
+      .map(([term, counts]) => {
+        const competitorAverageFrequency = round(
+          counts.total / competitors.length,
+        );
+        const competitorCoverage = round(counts.pages / competitors.length, 2);
+        const targetFrequency = target.termCounts[term] ?? 0;
+        const importance = round(
+          competitorCoverage * Math.max(1, competitorAverageFrequency),
+          2,
+        );
 
-      return {
-        term,
-        importance,
-        targetFrequency,
-        competitorAverageFrequency,
-        competitorCoverage,
-        status: coverageStatus(
+        return {
+          term,
+          importance,
           targetFrequency,
           competitorAverageFrequency,
-        ),
-      };
-    })
-    .filter((term) => term.competitorCoverage >= 0.4 || term.importance >= 1)
-    .toSorted(
-      (left, right) =>
-        right.importance - left.importance ||
-        right.competitorCoverage - left.competitorCoverage ||
-        left.term.localeCompare(right.term),
-    )
-    .slice(0, 20);
+          competitorCoverage,
+          status: coverageStatus(targetFrequency, competitorAverageFrequency),
+        };
+      })
+      .filter((term) => term.competitorCoverage >= 0.4 || term.importance >= 1),
+    (left, right) =>
+      right.importance - left.importance ||
+      right.competitorCoverage - left.competitorCoverage ||
+      left.term.localeCompare(right.term),
+  ).slice(0, 20);
 }
 
 function buildEntityCoverage(
@@ -276,40 +273,40 @@ function buildEntityCoverage(
   }
 
   const pool = buildCandidatePool(competitors, keyword);
-  const candidates = [...pool.entries()]
-    .map(([entity, counts]) => {
-      const competitorAverageFrequency = round(
-        counts.total / competitors.length,
-      );
-      const competitorCoverage = round(counts.pages / competitors.length, 2);
-      const targetFrequency = counts.isPhrase
-        ? target.phraseCounts?.[entity] ?? 0
-        : target.termCounts[entity] ?? 0;
-      const importance = candidateImportance(
-        competitorCoverage,
-        competitorAverageFrequency,
-      );
-      return {
-        entity,
-        importance,
-        targetFrequency,
-        competitorAverageFrequency,
-        competitorCoverage,
-        coverageStatus: coverageStatus(
+  const candidates = sort(
+    [...pool.entries()]
+      .map(([entity, counts]) => {
+        const competitorAverageFrequency = round(
+          counts.total / competitors.length,
+        );
+        const competitorCoverage = round(counts.pages / competitors.length, 2);
+        const targetFrequency = counts.isPhrase
+          ? (target.phraseCounts?.[entity] ?? 0)
+          : (target.termCounts[entity] ?? 0);
+        const importance = candidateImportance(
+          competitorCoverage,
+          competitorAverageFrequency,
+        );
+        return {
+          entity,
+          importance,
           targetFrequency,
           competitorAverageFrequency,
-        ),
-        isPhrase: counts.isPhrase,
-      };
-    })
-    .filter((candidate) => candidate.competitorCoverage >= 0.4)
-    .toSorted(
-      (left, right) =>
-        right.importance - left.importance ||
-        Number(right.isPhrase) - Number(left.isPhrase) ||
-        right.competitorCoverage - left.competitorCoverage ||
-        left.entity.localeCompare(right.entity),
-    );
+          competitorCoverage,
+          coverageStatus: coverageStatus(
+            targetFrequency,
+            competitorAverageFrequency,
+          ),
+          isPhrase: counts.isPhrase,
+        };
+      })
+      .filter((candidate) => candidate.competitorCoverage >= 0.4),
+    (left, right) =>
+      right.importance - left.importance ||
+      Number(right.isPhrase) - Number(left.isPhrase) ||
+      right.competitorCoverage - left.competitorCoverage ||
+      left.entity.localeCompare(right.entity),
+  );
 
   const naturalLanguageEntities = candidates
     .filter((candidate) => candidate.isPhrase || candidate.importance >= 4)
@@ -349,8 +346,8 @@ function buildEntityCoverage(
       (total, entity) =>
         total +
         (pool.get(entity.entity)?.isPhrase
-          ? page.phraseCounts?.[entity.entity] ?? 0
-          : page.termCounts[entity.entity] ?? 0),
+          ? (page.phraseCounts?.[entity.entity] ?? 0)
+          : (page.termCounts[entity.entity] ?? 0)),
       0,
     );
   const entityCount = (
@@ -370,8 +367,7 @@ function buildEntityCoverage(
   const targetDensity =
     target.wordCount > 0
       ? round(
-          (entityMentions(target, naturalLanguageEntities) /
-            target.wordCount) *
+          (entityMentions(target, naturalLanguageEntities) / target.wordCount) *
             1000,
         )
       : 0;
@@ -409,7 +405,8 @@ function classifyPage(
   page: ContentOptimizationPageSource,
   keyword: string,
 ): { category: string; confidence: number } {
-  const content = `${page.url} ${page.title ?? ""} ${page.headings.join(" ")} ${page.text.slice(0, 5000)}`.toLocaleLowerCase();
+  const content =
+    `${page.url} ${page.title ?? ""} ${page.headings.join(" ")} ${page.text.slice(0, 5000)}`.toLocaleLowerCase();
   const rules: Array<{
     category: string;
     pattern: RegExp;
@@ -461,12 +458,15 @@ function dominantCategory(
     );
   }
   return (
-    [...counts.entries()].toSorted((left, right) => right[1] - left[1])[0]?.[0] ??
+    sort([...counts.entries()], (left, right) => right[1] - left[1])[0]?.[0] ??
     null
   );
 }
 
-function suggestedTitle(keyword: string, category: string | null): string | null {
+function suggestedTitle(
+  keyword: string,
+  category: string | null,
+): string | null {
   if (!keyword.trim()) return null;
   const templates: Record<string, string> = {
     Comparison: `${keyword}: Comparison and Alternatives`,
@@ -743,7 +743,10 @@ function buildSuggestions(input: SuggestionInput): string[] {
     suggestions.push(
       `Add a link to this page from ${internalLinking.addInternalLinksFrom.length} related same-site ranking page${internalLinking.addInternalLinksFrom.length === 1 ? "" : "s"}.`,
     );
-  } else if (benchmark.internalLinkCount > 0 && target.internalLinkCount === 0) {
+  } else if (
+    benchmark.internalLinkCount > 0 &&
+    target.internalLinkCount === 0
+  ) {
     suggestions.push("Add internal links to related pages.");
   }
   return suggestions.slice(0, 8);
@@ -804,12 +807,7 @@ export function buildContentOptimizationReport(
     topicAndClassification,
     internalLinking,
   });
-  const score = buildScore(
-    source.target,
-    benchmark,
-    terms,
-    entityCoverage,
-  );
+  const score = buildScore(source.target, benchmark, terms, entityCoverage);
   const grade = gradeForScore(score);
   const pagesAnalyzed = 1 + competitorPages.length;
   const summary =

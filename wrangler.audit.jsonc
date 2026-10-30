@@ -53,14 +53,14 @@
   "kv_namespaces": [
     {
       "binding": "KV",
-      "id": "4abd52f3f2c549ac83cc2cb4ceec8620",
+      "id": "39433b494e6242d6b9773a13614d6af6",
     },
   ],
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "open-seo",
-      "database_id": "37bee90a-e1aa-404f-b01e-b0d1d479bda1",
+      "database_id": "184a46ad-989f-4e26-aab6-8260464e460e",
       "migrations_dir": "drizzle/sqlite",
     },
   ],

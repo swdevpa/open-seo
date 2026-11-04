@@ -38,6 +38,8 @@ log in again daily, raise it to at least the grant session duration. It
 applies to every Access application in the account. Clients that connected
 before the change keep their old session until they log in again.
 
+If the deploy created your Access application (you didn't set `TEAM_DOMAIN` and `POLICY_AUD`), each `pnpm deploy:selfhost` turns Managed OAuth off again, and MCP clients then fail with `Unexpected content type: text/html` (the Access login page). Repeat these steps after every deploy. To keep the setting, manage the Access application yourself: set `TEAM_DOMAIN` and `POLICY_AUD` in `.env.selfhost`, and the deploy leaves the application alone.
+
 MCP clients should connect to:
 
 ```text

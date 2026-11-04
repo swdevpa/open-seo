@@ -2,6 +2,8 @@ import { sql } from "drizzle-orm";
 import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { projects } from "./app.schema";
 
+// Stored content optimization reports. The report JSON is versioned in the
+// shared schema so old scans remain readable when the report shape changes.
 export const contentScans = sqliteTable(
   "content_scans",
   {

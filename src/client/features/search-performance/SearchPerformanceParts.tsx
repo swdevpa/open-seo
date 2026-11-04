@@ -38,6 +38,7 @@ import {
   type SearchPerformanceTableDimension,
 } from "@/types/schemas/search-performance";
 import { saveKeywords } from "@/serverFunctions/keywords";
+import { TrackRankingsMenu } from "./TrackRankingsMenu";
 
 export type ExportTarget = "csv" | "sheets";
 
@@ -66,6 +67,7 @@ function dimensionExportTable(
   dimension: SearchPerformanceTableDimension,
   rows: SearchPerformanceTableRow[],
   stamp: string,
+  showPosition: boolean,
 ): ExportTable {
   const isPage = dimension === "page";
   return {
@@ -74,15 +76,17 @@ function dimensionExportTable(
       isPage ? "Page" : "Query",
       "Clicks",
       "Impressions",
-      "CTR",
-      "Position",
+      "CTR (%)",
+      ...(showPosition ? ["Position"] : []),
     ],
     rows: rows.map((row) => [
       row.key,
       row.clicks,
       row.impressions,
-      row.ctr,
-      row.position,
+      // CTR is a 0-1 ratio; exports keep two decimals, which would turn 0.0234
+      // into 0.02. As a percentage the same precision reads 2.34.
+      Math.round(row.ctr * 10_000) / 100,
+      ...(showPosition ? [row.position] : []),
     ]),
   };
 }
@@ -112,9 +116,13 @@ export function exportDimensionRows(
   rows: SearchPerformanceTableRow[],
   range: Report["range"],
   target: ExportTarget,
+  showPosition: boolean,
 ): Promise<void> {
   const stamp = `${range.startDate}-to-${range.endDate}`;
-  return runExport(dimensionExportTable(dimension, rows, stamp), target);
+  return runExport(
+    dimensionExportTable(dimension, rows, stamp, showPosition),
+    target,
+  );
 }
 
 type Delta = { text: string; improved: boolean } | null;
@@ -136,7 +144,14 @@ function positionDelta(current: number, previous: number): Delta {
   };
 }
 
-export function TotalsTable({ report }: { report: Report }) {
+/** Discover and Google News report no position, so it is left out there. */
+export function TotalsTable({
+  report,
+  showPosition,
+}: {
+  report: Report;
+  showPosition: boolean;
+}) {
   const { totals, prevTotals, range } = report;
   const deltaTitle = `Compared with ${range.prevStartDate} to ${range.prevEndDate}`;
   const metrics = [
@@ -155,11 +170,15 @@ export function TotalsTable({ report }: { report: Report }) {
       value: formatCtr(totals.ctr),
       delta: percentDelta(totals.ctr, prevTotals.ctr),
     },
-    {
-      label: "Average position",
-      value: formatPosition(totals.position),
-      delta: positionDelta(totals.position, prevTotals.position),
-    },
+    ...(showPosition
+      ? [
+          {
+            label: "Average position",
+            value: formatPosition(totals.position),
+            delta: positionDelta(totals.position, prevTotals.position),
+          },
+        ]
+      : []),
   ];
   return (
     <div className="rounded-xl border border-border bg-card p-4">
@@ -195,6 +214,7 @@ export function TotalsTable({ report }: { report: Report }) {
 export function DimensionTable({
   rows,
   keyLabel,
+  showPosition,
   isFiltered,
   isPastEnd,
   onClearFilters,
@@ -202,12 +222,16 @@ export function DimensionTable({
 }: {
   rows: SearchPerformanceTableRow[];
   keyLabel: string;
+  showPosition: boolean;
   isFiltered: boolean;
   isPastEnd: boolean;
   onClearFilters: () => void;
   onFirstPage: () => void;
 }) {
-  const columns = useMemo(() => buildDimensionColumns(keyLabel), [keyLabel]);
+  const columns = useMemo(
+    () => buildDimensionColumns(keyLabel, showPosition),
+    [keyLabel, showPosition],
+  );
   const table = useDataTable({
     data: rows,
     columns,
@@ -387,6 +411,11 @@ export function StrikingDistanceTable({
             >
               Save as keywords
             </TableBulkActionButton>
+            <TrackRankingsMenu
+              projectId={projectId}
+              queries={selectedQueries}
+              onAdded={() => setRowSelection({})}
+            />
           </div>
         }
       />

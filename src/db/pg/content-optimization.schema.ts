@@ -5,6 +5,8 @@ import { projects } from "./app.schema";
 const isoNow = sql`to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`;
 
 // Keep this definition structurally identical to ../content-optimization.schema.ts.
+// Stored content optimization reports. The report JSON is versioned in the
+// shared schema so old scans remain readable when the report shape changes.
 export const contentScans = pgTable(
   "content_scans",
   {

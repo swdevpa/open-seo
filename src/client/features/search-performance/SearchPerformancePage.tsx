@@ -60,11 +60,16 @@ function tabDimension(
 }
 
 function buildFilterInput({
+  type = "web",
   range = "last_28_days",
   device,
   country,
-}: Pick<SearchPerformanceSearch, "range" | "device" | "country">): FilterInput {
+}: Pick<
+  SearchPerformanceSearch,
+  "type" | "range" | "device" | "country"
+>): FilterInput {
   return {
+    searchType: type,
     dateRange: range,
     ...(device ? { device } : {}),
     ...(country ? { country } : {}),
@@ -81,7 +86,9 @@ export function SearchPerformancePage({
   onSearchChange: (update: Partial<SearchPerformanceSearch>) => void;
 }) {
   const queryClient = useQueryClient();
-  const { range, device, country } = search;
+  const { type, range, device, country } = search;
+  // Discover and Google News report pages only, with no queries or position.
+  const isWeb = (type ?? "web") === "web";
   const textFilters = useMemo<TextFilters>(
     () => ({
       pageFilter: search.pageText
@@ -90,14 +97,21 @@ export function SearchPerformancePage({
             expression: search.pageText,
           }
         : undefined,
-      queryFilter: search.queryText
-        ? {
-            operator: search.queryMatch ?? "contains",
-            expression: search.queryText,
-          }
-        : undefined,
+      queryFilter:
+        search.queryText && isWeb
+          ? {
+              operator: search.queryMatch ?? "contains",
+              expression: search.queryText,
+            }
+          : undefined,
     }),
-    [search.pageText, search.pageMatch, search.queryText, search.queryMatch],
+    [
+      search.pageText,
+      search.pageMatch,
+      search.queryText,
+      search.queryMatch,
+      isWeb,
+    ],
   );
   const [showFilters, setShowFilters] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -107,14 +121,14 @@ export function SearchPerformancePage({
     Number(Boolean(country)) +
     Number(Boolean(device)) +
     Number(range !== undefined && range !== "last_28_days");
-  const tab = search.tab ?? "striking";
+  const tab = isWeb ? (search.tab ?? "striking") : "pages";
   const page = search.page ?? 1;
   const pageSize = search.size ?? SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE;
   const decayMonths = search.months ?? CONTENT_DECAY_DEFAULT_MONTHS;
   const isDecayTab = tab === "decay";
 
   const filterInput = {
-    ...buildFilterInput({ range, device, country }),
+    ...buildFilterInput({ type, range, device, country }),
     ...textFilters,
   };
 
@@ -143,19 +157,24 @@ export function SearchPerformancePage({
   // Warm the Queries tab (first page) as soon as the report connects so the tab
   // opens instantly instead of showing a spinner. Free first-party GSC data.
   useEffect(() => {
-    if (report?.connected !== true) return;
+    if (report?.connected !== true || !isWeb) return;
     void queryClient.prefetchQuery(
       tableQueryOptions(
         projectId,
         "query",
         1,
         SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE,
-        { ...buildFilterInput({ range, device, country }), ...textFilters },
+        {
+          ...buildFilterInput({ type, range, device, country }),
+          ...textFilters,
+        },
       ),
     );
   }, [
     report?.connected,
+    isWeb,
     projectId,
+    type,
     range,
     device,
     country,
@@ -182,7 +201,13 @@ export function SearchPerformancePage({
       const data = await exportSearchPerformanceTable({
         data: { projectId, dimension, ...filterInput },
       });
-      await exportDimensionRows(dimension, data.rows, report.range, target);
+      await exportDimensionRows(
+        dimension,
+        data.rows,
+        report.range,
+        target,
+        isWeb,
+      );
     } catch (error) {
       toast.error(getStandardErrorMessage(error, "Export failed"));
     } finally {
@@ -216,6 +241,7 @@ export function SearchPerformancePage({
       // Remount on URL changes (back/forward) so the draft matches.
       key={JSON.stringify(textFilters)}
       value={textFilters}
+      showQuery={isWeb}
       activeFilterCount={activeFilterCount}
       onApply={(filters) => {
         onSearchChange({
@@ -269,7 +295,7 @@ export function SearchPerformancePage({
             {reportQuery.isPlaceholderData ? (
               <SearchPerformanceLoadingState />
             ) : (
-              <TotalsTable report={report} />
+              <TotalsTable report={report} showPosition={isWeb} />
             )}
             <div className="overflow-hidden rounded-xl border border-border bg-card">
               <DataTableTabs
@@ -290,12 +316,16 @@ export function SearchPerformancePage({
                   />
                 }
               >
-                <TabsTrigger value="striking">
-                  {reportQuery.isPlaceholderData
-                    ? "Striking distance"
-                    : `Striking distance (${report.strikingDistance.length})`}
-                </TabsTrigger>
-                <TabsTrigger value="queries">Queries</TabsTrigger>
+                {isWeb ? (
+                  <>
+                    <TabsTrigger value="striking">
+                      {reportQuery.isPlaceholderData
+                        ? "Striking distance"
+                        : `Striking distance (${report.strikingDistance.length})`}
+                    </TabsTrigger>
+                    <TabsTrigger value="queries">Queries</TabsTrigger>
+                  </>
+                ) : null}
                 <TabsTrigger value="pages">Pages</TabsTrigger>
                 <TabsTrigger value="decay">Content decay</TabsTrigger>
               </DataTableTabs>
@@ -361,6 +391,7 @@ export function SearchPerformancePage({
                   projectId={projectId}
                   tableQuery={tableQuery}
                   keyLabel={tab === "queries" ? "Query" : "Page"}
+                  showPosition={isWeb}
                   page={page}
                   pageSize={pageSize}
                   onPageChange={(nextPage) =>

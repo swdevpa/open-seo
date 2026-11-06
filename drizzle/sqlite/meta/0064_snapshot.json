@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "38caaab4-0e27-4f53-b609-8405f2f38229",
+  "id": "d9095992-ff43-4f6c-8df3-d8a4f28b9fa3",
   "prevId": "f1b39d04-0124-442f-afd9-49710ac7afb7",
   "tables": {
     "account_deletion_requests": {
@@ -675,6 +675,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "brand_name": {
+          "name": "brand_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "domain": {
           "name": "domain",
           "type": "text",
@@ -1106,36 +1113,6 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "alert_webhook_url": {
-          "name": "alert_webhook_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "alert_position_drop": {
-          "name": "alert_position_drop",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "alert_left_top_10": {
-          "name": "alert_left_top_10",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
-        },
-        "alert_entered_top_3": {
-          "name": "alert_entered_top_3",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
         },
         "created_at": {
           "name": "created_at",
@@ -5719,257 +5696,6 @@
         "local_rank_trackers_project_id_projects_id_fk": {
           "name": "local_rank_trackers_project_id_projects_id_fk",
           "tableFrom": "local_rank_trackers",
-          "tableTo": "projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "youtube_connections": {
-      "name": "youtube_connections",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "channel_id": {
-          "name": "channel_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "channel_name": {
-          "name": "channel_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "channel_handle": {
-          "name": "channel_handle",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "thumbnail_url": {
-          "name": "thumbnail_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "connected_by_user_id": {
-          "name": "connected_by_user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "youtube_account_id": {
-          "name": "youtube_account_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "connected_account_email": {
-          "name": "connected_account_email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(current_timestamp)"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(current_timestamp)"
-        }
-      },
-      "indexes": {
-        "youtube_connections_project_channel_idx": {
-          "name": "youtube_connections_project_channel_idx",
-          "columns": [
-            "project_id",
-            "channel_id"
-          ],
-          "isUnique": true
-        },
-        "youtube_connections_organization_idx": {
-          "name": "youtube_connections_organization_idx",
-          "columns": [
-            "organization_id"
-          ],
-          "isUnique": false
-        },
-        "youtube_connections_connector_idx": {
-          "name": "youtube_connections_connector_idx",
-          "columns": [
-            "connected_by_user_id",
-            "youtube_account_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "youtube_connections_project_id_projects_id_fk": {
-          "name": "youtube_connections_project_id_projects_id_fk",
-          "tableFrom": "youtube_connections",
-          "tableTo": "projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "youtube_connections_organization_id_organization_id_fk": {
-          "name": "youtube_connections_organization_id_organization_id_fk",
-          "tableFrom": "youtube_connections",
-          "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "content_scans": {
-      "name": "content_scans",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "url": {
-          "name": "url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "keyword": {
-          "name": "keyword",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "location_code": {
-          "name": "location_code",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "language_code": {
-          "name": "language_code",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "score": {
-          "name": "score",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "grade": {
-          "name": "grade",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "report": {
-          "name": "report",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(current_timestamp)"
-        }
-      },
-      "indexes": {
-        "content_scans_project_created_idx": {
-          "name": "content_scans_project_created_idx",
-          "columns": [
-            "project_id",
-            "created_at"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "content_scans_project_id_projects_id_fk": {
-          "name": "content_scans_project_id_projects_id_fk",
-          "tableFrom": "content_scans",
           "tableTo": "projects",
           "columnsFrom": [
             "project_id"

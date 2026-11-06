@@ -244,7 +244,6 @@ async function triggerCheck(input: {
       keywords.map((kw) => kw.keyword),
       config.devices,
       config.serpDepth,
-      "live",
     );
     if (costCredits > input.maxCostCredits) {
       throw new AppError(

@@ -29,12 +29,12 @@ import {
 } from "@/server/lib/dataforseo/google-ads";
 import {
   clampSerpDepth,
-  fetchLiveSerp,
   fetchLocalSerp,
-  fetchRankCheckSerp,
   postLocalSerpTasks,
   postRankCheckTasks,
+  postSerpReadTasks,
   SERP_ANALYSIS_DEPTH,
+  SERP_READS_PER_QUERY,
 } from "@/server/lib/dataforseo/serp";
 import { fetchLighthouseResult } from "@/server/lib/dataforseo/lighthouse";
 import { fetchContentOptimizationSource } from "@/server/lib/dataforseo/content-optimization";
@@ -114,6 +114,11 @@ const UPDATES_PRIORITY_PER_10_USD = 0.0015;
 // fixtures show $0.00425 billed.
 const LIGHTHOUSE_LIVE_USD = 0.005;
 
+// Google Organic SERP, live, first page of 10 results
+// (dataforseo.com/pricing/serp/google-organic-serp-api). Content optimization
+// still reads its one SERP live; rank checks moved to queued reads.
+const SERP_LIVE_FIRST_PAGE_USD = 0.002;
+
 // OnPage Content Parsing, live (dataforseo.com/pricing/on-page/onpage-api).
 // Kept above the list price as an upper bound per parsed page.
 const CONTENT_PARSING_LIVE_USD = 0.002;
@@ -178,9 +183,9 @@ function backlinksUsd(rows: number) {
 }
 
 /** SERP endpoints bill per page of 10; a partial page is a full page. */
-function serpUsd(depth: number, method: "live" | "queued", keyword: string) {
+function serpUsd(depth: number, keyword: string) {
   return (
-    costPerSerpAtDepth(Math.ceil(depth / 10) * 10, method) *
+    costPerSerpAtDepth(Math.ceil(depth / 10) * 10) *
     serpKeywordCostMultiplier(keyword)
   );
 }
@@ -258,20 +263,20 @@ export const dataforseoPricing = {
     relevantPages: priced(fetchRelevantPages, (input) => labsUsd(input.limit)),
   },
   serp: {
-    live: priced(fetchLiveSerp, (input) =>
-      serpUsd(
-        clampSerpDepth(input.depth ?? SERP_ANALYSIS_DEPTH),
-        "live",
-        input.keyword,
-      ),
-    ),
-    rankCheck: priced(fetchRankCheckSerp, (input) =>
-      serpUsd(clampSerpDepth(input.depth), "live", input.keyword),
+    // High priority (priority 2) doubles the standard-queue rate.
+    readsTaskPost: priced(
+      postSerpReadTasks,
+      (input) =>
+        SERP_READS_PER_QUERY *
+        2 *
+        serpUsd(
+          clampSerpDepth(input.depth ?? SERP_ANALYSIS_DEPTH),
+          input.keyword,
+        ),
     ),
     rankCheckTaskPost: priced(postRankCheckTasks, (input) =>
       input.tasks.reduce(
-        (sum, task) =>
-          sum + serpUsd(clampSerpDepth(input.depth), "queued", task.keyword),
+        (sum, task) => sum + serpUsd(clampSerpDepth(input.depth), task.keyword),
         0,
       ),
     ),
@@ -302,7 +307,7 @@ export const dataforseoPricing = {
     scan: priced(
       fetchContentOptimizationSource,
       (input) =>
-        serpUsd(10, "live", input.keyword) +
+        SERP_LIVE_FIRST_PAGE_USD * serpKeywordCostMultiplier(input.keyword) +
         (CONTENT_OPTIMIZATION_TOP_PAGES + 1) * CONTENT_PARSING_LIVE_USD,
     ),
   },

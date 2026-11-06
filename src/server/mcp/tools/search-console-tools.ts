@@ -12,7 +12,7 @@ import {
   type McpTableColumn,
 } from "@/server/mcp/table";
 import { projectIdSchema } from "@/server/mcp/schemas";
-import { buildDashboardUrl } from "@/server/mcp/urls";
+import { buildConnectGscUrl } from "@/server/mcp/urls";
 import { getGoogleAccessMode } from "@/server/features/google/googleAccess";
 import { hasGoogleOAuthConfig } from "@/server/features/google/oauth-config";
 import { GscService } from "@/server/features/gsc/services/GscService";
@@ -59,12 +59,6 @@ type ProjectAuthContext = {
   auth: { organizationId: string };
   baseUrl: string;
 };
-
-function connectGscUrl(baseUrl: string, projectId: string): string {
-  // GSC Insights hosts the connection card AND the data the user came for,
-  // so land them there rather than in settings.
-  return buildDashboardUrl(baseUrl, `/p/${projectId}/search-performance`);
-}
 
 /** Self-hosted GSC requires the operator to provide a Google OAuth client and
  *  BETTER_AUTH_SECRET. Return this setup nudge before attempting a token lookup
@@ -278,7 +272,11 @@ export const getSearchConsolePerformanceTool = {
     );
     if (blocked) return blocked;
 
-    const connectUrl = connectGscUrl(context.baseUrl, args.projectId);
+    const connectUrl = buildConnectGscUrl(
+      context.baseUrl,
+      args.projectId,
+      context.auth.guestClaimToken,
+    );
     const meta = buildProjectMeta(
       context,
       args.projectId,
@@ -526,7 +524,11 @@ export const inspectUrlsTool = {
     );
     if (blocked) return blocked;
 
-    const connectUrl = connectGscUrl(context.baseUrl, args.projectId);
+    const connectUrl = buildConnectGscUrl(
+      context.baseUrl,
+      args.projectId,
+      context.auth.guestClaimToken,
+    );
     const meta = buildProjectMeta(
       context,
       args.projectId,
@@ -653,7 +655,11 @@ export const diagnoseTrafficDropTool = {
     );
     if (blocked) return blocked;
 
-    const connectUrl = connectGscUrl(context.baseUrl, args.projectId);
+    const connectUrl = buildConnectGscUrl(
+      context.baseUrl,
+      args.projectId,
+      context.auth.guestClaimToken,
+    );
     const meta = buildProjectMeta(
       context,
       args.projectId,
@@ -773,7 +779,11 @@ export const getContentDecayTool = {
     );
     if (blocked) return blocked;
 
-    const connectUrl = connectGscUrl(context.baseUrl, args.projectId);
+    const connectUrl = buildConnectGscUrl(
+      context.baseUrl,
+      args.projectId,
+      context.auth.guestClaimToken,
+    );
     const meta = buildProjectMeta(
       context,
       args.projectId,

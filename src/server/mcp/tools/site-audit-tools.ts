@@ -2,6 +2,7 @@
 import { sort } from "remeda";
 import { z } from "zod";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
+import { AUDIT_LIMITS } from "@/server/features/audit/services/audit-capacity";
 import { AuditService } from "@/server/features/audit/services/AuditService";
 import { AppError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";
@@ -25,8 +26,14 @@ import {
 } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
+import { buildDashboardUrl } from "@/server/mcp/urls";
 import { renderingEstimateText } from "@/shared/audit-rendering";
-import { RENDERED_CRAWL_TIME_LIMIT_HOURS } from "@/shared/audit-limits";
+import {
+  DEFAULT_AUDIT_PAGES,
+  FREE_MAX_AUDIT_PAGES,
+  RENDERED_CRAWL_TIME_LIMIT_HOURS,
+} from "@/shared/audit-limits";
+import { BILLING_ROUTE } from "@/shared/billing";
 
 const auditIdSchema = z
   .string()
@@ -63,7 +70,9 @@ const runInputSchema = {
     .min(10)
     .max(10_000)
     .optional()
-    .describe("Page budget for the crawl (default 50)."),
+    .describe(
+      `Page budget for the crawl (default ${DEFAULT_AUDIT_PAGES}). Free plans audit at most ${FREE_MAX_AUDIT_PAGES} pages: a larger budget runs at ${FREE_MAX_AUDIT_PAGES} and the reply says so.`,
+    ),
   renderJavaScript: z
     .boolean()
     .optional()
@@ -107,6 +116,13 @@ export const runSiteAuditTool = {
     // own explicit lighthouseStrategy, so this default only governs agents.
     const lighthouseStrategy = (args.runLighthouse ?? false) ? "auto" : "none";
     const limitTier = await AuditService.resolveAuditLimitTier(context.billing);
+    // Agents can't see the account's plan, so an oversized budget runs at the
+    // plan limit instead of failing. The app's launch form keeps its refusal.
+    const requestedPages = args.maxPages ?? DEFAULT_AUDIT_PAGES;
+    const maxPages = Math.min(
+      requestedPages,
+      AUDIT_LIMITS[limitTier].maxPagesPerAudit,
+    );
     let auditId: string;
     try {
       ({ auditId } = await AuditService.startAudit({
@@ -114,7 +130,7 @@ export const runSiteAuditTool = {
         billingCustomer: context.billing,
         projectId: args.projectId,
         startUrl: args.url,
-        maxPages: args.maxPages,
+        maxPages,
         lighthouseStrategy,
         limitTier,
         renderJavaScript: args.renderJavaScript,
@@ -124,7 +140,7 @@ export const runSiteAuditTool = {
       // no audit started, so there is no auditId to report.
       const refusalText =
         error instanceof AppError && error.code === "AUDIT_CAPACITY_REACHED"
-          ? "Audit capacity reached for this account — delete old audits in the dashboard to free capacity, then try again."
+          ? "Audit capacity reached for this account. list_site_audits shows a project's audits, and delete_site_audit frees capacity, but deleting permanently removes an audit's results and needs an owner or admin. Confirm with the user which audit to delete, then try again."
           : error instanceof AppError && error.code === "AUDIT_ALREADY_RUNNING"
             ? "This account is at its limit of concurrently running audits. Poll get_audit_status until one finishes, then try again."
             : // startAudit refuses only rendering with FORBIDDEN; its message
@@ -153,14 +169,20 @@ export const runSiteAuditTool = {
       organizationId: context.auth.organizationId,
       properties: {
         project_id: args.projectId,
-        max_pages: args.maxPages ?? 50,
+        max_pages: maxPages,
+        requested_max_pages: requestedPages,
         run_lighthouse: lighthouseStrategy !== "none",
         source: "mcp",
       },
     });
 
+    const capNote =
+      maxPages < requestedPages
+        ? ` Free plan audits are limited to ${maxPages} pages, so this audit covers at most ${maxPages} of the ${requestedPages} requested. Mention this limit when you report the results. Larger audits need a paid plan, which the organization owner can manage at ${buildDashboardUrl(context.baseUrl, BILLING_ROUTE)}.`
+        : "";
+
     return mcpResponse({
-      text: `Audit ${auditId} started for ${args.url}. Poll get_audit_status until it finishes, then call get_audit_issues for the prioritized issue report (even a failed audit keeps results for every page it crawled).`,
+      text: `Audit ${auditId} started for ${args.url}.${capNote} Poll get_audit_status until it finishes, then call get_audit_issues for the prioritized issue report (even a failed audit keeps results for every page it crawled).`,
       meta: buildProjectMeta(
         context,
         args.projectId,
@@ -384,7 +406,9 @@ export const getAuditIssuesTool = {
           ? `No issues found for audit ${audit.id} matching the given filters.`
           : audit.status === "running"
             ? `Audit ${audit.id} is still running; issues are recorded when it finishes. Poll get_audit_status.`
-            : `Audit ${audit.id} found no issues across ${audit.pagesCrawled} crawled page${audit.pagesCrawled === 1 ? "" : "s"}.`
+            : audit.status === "failed" && audit.pagesCrawled === 0
+              ? `Audit ${audit.id} failed before crawling any pages, so it has no results. get_audit_status shows the error; call run_site_audit to try again.`
+              : `Audit ${audit.id} found no issues across ${audit.pagesCrawled} crawled page${audit.pagesCrawled === 1 ? "" : "s"}.`
         : [
             `Audit ${audit.id} (${audit.startUrl}): ${rows.length} issues across ${summary.length} issue type${summary.length === 1 ? "" : "s"}.`,
             ...sections,

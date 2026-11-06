@@ -28,9 +28,14 @@ import {
 import { resolveSignInHostedOrganization } from "@/server/auth/default-hosted-organization";
 import { onInvitationAccepted } from "@/server/auth/invited-member";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
+import { GoogleAccountService } from "@/server/features/google/GoogleAccountService";
 import { assertStandaloneSignUpOpen } from "@/server/standalone/sign-up";
 import { captureDubReferralSignup } from "@/server/referrals/dub";
-import { captureMetaSignup } from "@/server/referrals/meta";
+import {
+  captureMetaSetupStep,
+  captureMetaSignup,
+  MetaSetupEvent,
+} from "@/server/referrals/meta";
 import {
   captureSignUpCompleted,
   saveSignUpCampaign,
@@ -41,6 +46,7 @@ import {
 } from "@/shared/privacy-choices";
 import { markMcpConnected } from "@/server/features/activation/mcpActivation";
 import { assertNotScheduledForDeletion } from "@/server/account-deletion/signInBlock";
+import { claimGuestFromCookie } from "@/server/auth/guest-accounts";
 import {
   sendHostedPasswordResetEmail,
   sendHostedVerificationEmail,
@@ -63,6 +69,12 @@ const createdApiKeySchema = z.object({
   referenceId: z.string(),
   // Bound by the api-key/create before hook.
   metadata: z.looseObject({ organizationId: z.string().min(1) }),
+});
+
+// The member row /organization/leave returns once it has been deleted.
+const leftMemberSchema = z.object({
+  userId: z.string().min(1),
+  organizationId: z.string().min(1),
 });
 
 function createAuth() {
@@ -135,6 +147,16 @@ function createAuth() {
                       "The owner role can't be granted from here. Use Transfer ownership in organization settings.",
                   });
                 }
+              },
+              // Before, not after: a failed disconnect then fails the removal,
+              // which the admin can retry, instead of leaving a removed
+              // member's Google grant serving the organization. Leaving on
+              // one's own skips these hooks; the after hook below covers it.
+              beforeRemoveMember: async ({ member: removedMember }) => {
+                await GoogleAccountService.disconnectMember(
+                  removedMember.userId,
+                  removedMember.organizationId,
+                );
               },
               afterAcceptInvitation: async ({ member: acceptedMember }) => {
                 await onInvitationAccepted({
@@ -298,6 +320,15 @@ function createAuth() {
       // memory, so every one would re-send it and hit Loops' team-wide rate
       // limit.
       after: createAuthMiddleware(async (ctx) => {
+        if (ctx.path === "/organization/leave") {
+          const left = leftMemberSchema.safeParse(ctx.context.returned);
+          if (left.success)
+            await GoogleAccountService.disconnectMember(
+              left.data.userId,
+              left.data.organizationId,
+            );
+          return;
+        }
         if (ctx.path !== "/api-key/create") return;
         const created = createdApiKeySchema.safeParse(ctx.context.returned);
         if (!created.success) return;
@@ -309,6 +340,11 @@ function createAuth() {
           userEmail: user.email,
           organizationId: metadata.organizationId,
         });
+        await captureMetaSetupStep(
+          MetaSetupEvent.AgentConnected,
+          metadata.organizationId,
+          ctx.request,
+        );
       }),
     },
     databaseHooks: {
@@ -368,15 +404,21 @@ function createAuth() {
       },
       session: {
         create: {
-          before: async (session) => {
+          before: async (session, ctx) => {
             // Runs on every sign-in (each sign-in mints a session row). Refuses
-            // an account waiting to be deleted, then resolves the active org:
+            // an account waiting to be deleted, claims a guest account whose
+            // claim link this browser opened (its org then counts as a
+            // membership below), then resolves the active org:
             // last-active org while still a member → most recently joined → a
             // new default one — except a membership-less user with a pending
             // invitation gets none (null active org), so accepting leaves them
             // in exactly the inviter's org. createOrganization is injected so
             // the helper needn't import auth.ts and create a cycle.
             await assertNotScheduledForDeletion(session.userId);
+            await claimGuestFromCookie(
+              ctx?.request?.headers ?? ctx?.headers,
+              session.userId,
+            );
             const resolved = await resolveSignInHostedOrganization(
               session.userId,
               (body) => auth.api.createOrganization({ body }),

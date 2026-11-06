@@ -14,5 +14,3 @@ export * from "../gsc.schema";
 export * from "../telemetry.schema";
 export * from "../ai-visibility.schema";
 export * from "../local-seo.schema";
-export * from "../youtube.schema";
-export * from "../content-optimization.schema";

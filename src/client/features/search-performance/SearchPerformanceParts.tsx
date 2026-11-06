@@ -42,11 +42,7 @@ import { TrackRankingsMenu } from "./TrackRankingsMenu";
 
 export type ExportTarget = "csv" | "sheets";
 
-type ExportTable = {
-  filename: string;
-  headers: string[];
-  rows: CsvValue[][];
-};
+type ExportTable = { filename: string; headers: string[]; rows: CsvValue[][] };
 
 function strikingExportTable(report: Report): ExportTable {
   const stamp = `${report.range.startDate}-to-${report.range.endDate}`;
@@ -91,10 +87,7 @@ function dimensionExportTable(
   };
 }
 
-export function runExport(
-  table: ExportTable,
-  target: ExportTarget,
-): Promise<void> {
+function runExport(table: ExportTable, target: ExportTarget): Promise<void> {
   return exportRows({
     format: target,
     feature: "search_performance",

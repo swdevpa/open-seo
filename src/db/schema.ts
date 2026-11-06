@@ -12,8 +12,6 @@ import * as sqliteGsc from "./gsc.schema";
 import * as sqliteTelemetry from "./telemetry.schema";
 import * as sqliteAiVisibility from "./ai-visibility.schema";
 import * as sqliteLocalSeo from "./local-seo.schema";
-import * as sqliteYoutube from "./youtube.schema";
-import * as sqliteContentOptimization from "./content-optimization.schema";
 import * as pgApp from "./pg/app.schema";
 import * as pgProjectContext from "./pg/project-context.schema";
 import * as pgReports from "./pg/reports.schema";
@@ -27,8 +25,6 @@ import * as pgGsc from "./pg/gsc.schema";
 import * as pgTelemetry from "./pg/telemetry.schema";
 import * as pgAiVisibility from "./pg/ai-visibility.schema";
 import * as pgLocalSeo from "./pg/local-seo.schema";
-import * as pgYoutube from "./pg/youtube.schema";
-import * as pgContentOptimization from "./pg/content-optimization.schema";
 
 // Canonical schema barrel. Repositories import their tables from here and the
 // provider-aware `db` from "@/db", so each repository is written ONCE for both
@@ -52,9 +48,7 @@ type AppSchema = typeof sqliteApp &
   typeof sqliteGsc &
   typeof sqliteTelemetry &
   typeof sqliteAiVisibility &
-  typeof sqliteLocalSeo &
-  typeof sqliteYoutube &
-  typeof sqliteContentOptimization;
+  typeof sqliteLocalSeo;
 
 const runtimeSchema =
   getDatabaseProvider() === "postgres"
@@ -72,8 +66,6 @@ const runtimeSchema =
         ...pgTelemetry,
         ...pgAiVisibility,
         ...pgLocalSeo,
-        ...pgYoutube,
-        ...pgContentOptimization,
       }
     : {
         ...sqliteApp,
@@ -89,8 +81,6 @@ const runtimeSchema =
         ...sqliteTelemetry,
         ...sqliteAiVisibility,
         ...sqliteLocalSeo,
-        ...sqliteYoutube,
-        ...sqliteContentOptimization,
       };
 
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- guarded by schema-parity.test.ts
@@ -122,7 +112,6 @@ export const {
   projectResearchLog,
   reports,
   reportTemplates,
-  contentScans,
   audits,
   auditPages,
   auditIssues,
@@ -139,7 +128,6 @@ export const {
   billingCustomerStatus,
   ga4Connections,
   gscConnections,
-  youtubeConnections,
   telemetryState,
   aiTrackers,
   aiPrompts,

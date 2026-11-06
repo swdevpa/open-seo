@@ -1,15 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
 import { IndexNowService } from "@/server/features/indexnow/services/IndexNowService";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   indexNowProjectSchema,
   submitIndexNowUrlsSchema,
 } from "@/types/schemas/indexnow";
-
-const submitAuditToIndexNowSchema = indexNowProjectSchema.extend({
-  auditId: z.string().min(1),
-});
 
 export const getIndexNowSetup = createServerFn({ method: "GET" })
   .middleware(requireProjectContext)
@@ -31,11 +26,4 @@ export const submitIndexNowUrls = createServerFn({ method: "POST" })
   .validator(submitIndexNowUrlsSchema)
   .handler(async ({ data, context }) =>
     IndexNowService.submitUrls(context, data.urls),
-  );
-
-export const submitAuditToIndexNow = createServerFn({ method: "POST" })
-  .middleware(requireProjectContext)
-  .validator(submitAuditToIndexNowSchema)
-  .handler(async ({ data, context }) =>
-    IndexNowService.submitAuditPages(context, data.auditId),
   );

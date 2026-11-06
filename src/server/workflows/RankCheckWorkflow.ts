@@ -1,4 +1,3 @@
-/* eslint-disable max-lines -- fork: upstream keeps this file near the limit and the fork adds the rank tracker alert step; kept inline so upstream merges stay clean */
 import {
   WorkflowEntrypoint,
   type WorkflowEvent,
@@ -13,7 +12,6 @@ import {
 } from "@/server/billing/subscription";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { failRunIfActive } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
-import { RankAlertService } from "@/server/features/rank-tracking/services/RankAlertService";
 import { runQueuedCheck } from "@/server/workflows/rankCheckPaths";
 import {
   READ_WINDOW_MS,
@@ -38,14 +36,6 @@ import { isErrorCode } from "@/shared/error-codes";
 // paid batch steps live in rankCheckPaths and run once.
 const FREE_STEP_CONFIG = {
   retries: { limit: 2, delay: "10 seconds" as const },
-  timeout: "2 minutes" as const,
-};
-
-// A webhook POST is not safe to repeat (it would notify twice), so the alert
-// step runs once. sendRunAlerts never throws, so this only matters on an
-// engine failure.
-const ALERT_STEP_CONFIG = {
-  retries: { limit: 0, delay: "1 second" as const },
   timeout: "2 minutes" as const,
 };
 
@@ -447,15 +437,6 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           batchError,
         }),
       );
-
-      // Webhook alerts are for unattended runs; a manual check shows its
-      // results in the UI. sendRunAlerts never throws, so a failed delivery
-      // can't flip a completed run to failed.
-      if (trigger === "scheduled") {
-        await pgStep(step, "send-alerts", ALERT_STEP_CONFIG, async () =>
-          RankAlertService.sendRunAlerts({ runId, configId, projectId }),
-        );
-      }
     } catch (error) {
       // Cloudflare resets the Workflow's Durable Object on a deploy or its own
       // restarts. The engine replays the run from its last finished step and

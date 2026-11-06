@@ -1,22 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { IndexNowService } from "./IndexNowService";
 
-const { getProject, setKey, getAudit, getAuditPages } = vi.hoisted(() => ({
+const { getProject, setKey } = vi.hoisted(() => ({
   getProject: vi.fn(),
   setKey: vi.fn(),
-  getAudit: vi.fn(),
-  getAuditPages: vi.fn(),
 }));
 vi.mock("@/server/features/projects/repositories/ProjectRepository", () => ({
   ProjectRepository: {
     getProjectForOrganization: getProject,
     setIndexNowKeyIfMissing: setKey,
-  },
-}));
-vi.mock("@/server/features/audit/repositories/AuditRepository", () => ({
-  AuditRepository: {
-    getAuditForProject: getAudit,
-    getPagesForAudit: getAuditPages,
   },
 }));
 // The SSRF guard resolves DNS; these tests only cover IndexNow behavior.
@@ -203,37 +195,6 @@ describe("IndexNowService.checkKeyFiles", () => {
     expect(result.hosts).toEqual([
       { host: "example.com", status: "moved" },
       { host: "www.example.com", status: "missing" },
-    ]);
-  });
-});
-
-describe("IndexNowService.submitAuditPages", () => {
-  it("submits only indexable, successfully fetched audit pages", async () => {
-    getAudit.mockResolvedValue({ id: "a1" });
-    getAuditPages.mockResolvedValue([
-      { url: "https://example.com/ok", statusCode: 200, isIndexable: true },
-      {
-        url: "https://example.com/noindex",
-        statusCode: 200,
-        isIndexable: false,
-      },
-      {
-        url: "https://example.com/missing",
-        statusCode: 404,
-        isIndexable: true,
-      },
-      {
-        url: "https://example.com/blocked",
-        statusCode: 200,
-        isIndexable: true,
-        fetchClass: "blocked",
-      },
-    ]);
-
-    await IndexNowService.submitAuditPages(scope, "a1");
-
-    expect(submissions().map((submission) => submission.body)).toEqual([
-      { host: "example.com", key: KEY, urlList: ["https://example.com/ok"] },
     ]);
   });
 });

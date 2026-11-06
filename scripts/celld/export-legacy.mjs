@@ -100,7 +100,6 @@ try {
     "d1_migrations",
     "gsc_connections",
     "ga4_connections",
-    "youtube_connections",
     "billing_customer_status",
     "telemetry_state",
   ]);

@@ -1,4 +1,3 @@
-/* eslint-disable max-lines -- fork: upstream keeps this file near the limit and the fork adds rank tracker alert defaults; kept inline so upstream merges stay clean */
 import { env } from "cloudflare:workers";
 import {
   customerHasPaidPlan,
@@ -135,10 +134,6 @@ async function createConfig(input: {
     isActive: true,
     lastCheckedAt: null,
     lastSkipReason: null,
-    alertWebhookUrl: null,
-    alertPositionDrop: null,
-    alertLeftTop10: false,
-    alertEnteredTop3: false,
     createdAt: toRankTrackingTimestamp(new Date()),
   };
 

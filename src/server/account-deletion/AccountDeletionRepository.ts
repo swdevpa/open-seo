@@ -32,7 +32,6 @@ import {
   reportTemplates,
   reports,
   samSessions,
-  youtubeConnections,
   session,
   user,
   verification,
@@ -41,21 +40,16 @@ import {
 import { GA4_OAUTH_PROVIDER_ID } from "@/shared/ga4";
 import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
 import { LocalScanStatus } from "@/shared/local-seo";
-import { YOUTUBE_OAUTH_PROVIDER_ID } from "@/shared/youtube";
 
 // Stands in for the erased user on rows other members keep.
 const DELETED_USER_ID = "gdpr-deleted-user";
 
-const GOOGLE_PROVIDER_IDS = [
-  GSC_OAUTH_PROVIDER_ID,
-  GA4_OAUTH_PROVIDER_ID,
-  YOUTUBE_OAUTH_PROVIDER_ID,
-] as const;
-
-type GoogleProviderId = (typeof GOOGLE_PROVIDER_IDS)[number];
+type GoogleProviderId =
+  | typeof GSC_OAUTH_PROVIDER_ID
+  | typeof GA4_OAUTH_PROVIDER_ID;
 
 const isGoogleProviderId = (value: string): value is GoogleProviderId =>
-  GOOGLE_PROVIDER_IDS.some((id) => id === value);
+  value === GSC_OAUTH_PROVIDER_ID || value === GA4_OAUTH_PROVIDER_ID;
 
 async function getRequest(userId: string) {
   const [row] = await db
@@ -221,7 +215,10 @@ async function buildInventory(userId: string, organizationIds: string[]) {
       .where(
         and(
           eq(account.userId, userId),
-          inArray(account.providerId, [...GOOGLE_PROVIDER_IDS]),
+          inArray(account.providerId, [
+            GSC_OAUTH_PROVIDER_ID,
+            GA4_OAUTH_PROVIDER_ID,
+          ]),
           notExists(
             db
               .select({ id: otherGrant.id })
@@ -230,7 +227,10 @@ async function buildInventory(userId: string, organizationIds: string[]) {
                 and(
                   eq(otherGrant.accountId, account.accountId),
                   ne(otherGrant.userId, userId),
-                  inArray(otherGrant.providerId, [...GOOGLE_PROVIDER_IDS]),
+                  inArray(otherGrant.providerId, [
+                    GSC_OAUTH_PROVIDER_ID,
+                    GA4_OAUTH_PROVIDER_ID,
+                  ]),
                 ),
               ),
           ),
@@ -344,9 +344,6 @@ async function eraseUser(input: {
     tx
       .delete(ga4Connections)
       .where(eq(ga4Connections.connectedByUserId, userId)),
-    tx
-      .delete(youtubeConnections)
-      .where(eq(youtubeConnections.connectedByUserId, userId)),
     tx.delete(apikey).where(eq(apikey.referenceId, userId)),
     tx
       .update(audits)

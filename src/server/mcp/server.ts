@@ -46,7 +46,6 @@ import { getRankTrackerTool } from "@/server/mcp/tools/get-rank-tracker";
 import { removeRankTrackingKeywordsTool } from "@/server/mcp/tools/remove-rank-tracking-keywords";
 import { pinRankTrackingKeywordsTool } from "@/server/mcp/tools/pin-rank-tracking-keywords";
 import { runRankTrackerTool } from "@/server/mcp/tools/run-rank-tracker";
-import { setRankTrackerAlertsTool } from "@/server/mcp/tools/set-rank-tracker-alerts";
 import { searchSerpLocationsTool } from "@/server/mcp/tools/search-serp-locations";
 import { getSerpResultsTool } from "@/server/mcp/tools/get-serp-results";
 import {
@@ -62,7 +61,6 @@ import {
   getSearchOpportunitiesTool,
 } from "@/server/mcp/tools/google-analytics-tools";
 import { createProjectTool } from "@/server/mcp/tools/create-project";
-import { enableIndexNowTool } from "@/server/mcp/tools/enable-indexnow";
 import {
   listGoogleAnalyticsPropertiesTool,
   listSearchConsoleSitesTool,
@@ -110,8 +108,6 @@ import {
 import { researchKeywordsTool } from "@/server/mcp/tools/research-keywords";
 import { saveKeywordsTool } from "@/server/mcp/tools/save-keywords";
 import {
-  diagnoseTrafficDropTool,
-  getContentDecayTool,
   getSearchConsolePerformanceTool,
   inspectUrlsTool,
 } from "@/server/mcp/tools/search-console-tools";
@@ -126,10 +122,6 @@ import {
   listSiteAuditsTool,
 } from "@/server/mcp/tools/site-audit-cleanup-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
-import {
-  getContentOptimizationTool,
-  runContentOptimizationTool,
-} from "@/server/mcp/tools/content-optimization-tools";
 import { explorePromptTool } from "@/server/mcp/tools/explore-prompt";
 import { registerWidgetResource } from "@/server/mcp/widget-resource";
 import { rememberWidgetResult } from "@/server/mcp/widget-results";
@@ -304,7 +296,6 @@ export function registerOpenSeoTools(
   register(pinRankTrackingKeywordsTool);
   register(estimateRankTrackerCostTool);
   register(runRankTrackerTool);
-  register(setRankTrackerAlertsTool);
   register(getRankedKeywordsTool);
   register(findSerpCompetitorsTool);
   register(searchLocalBusinessesTool);
@@ -320,9 +311,6 @@ export function registerOpenSeoTools(
   register(setSearchConsoleSiteTool);
   register(getSearchConsolePerformanceTool);
   register(inspectUrlsTool);
-  register(diagnoseTrafficDropTool);
-  register(getContentDecayTool);
-  register(enableIndexNowTool);
   register(submitIndexNowUrlsTool);
   register(listGoogleAnalyticsPropertiesTool);
   register(setGoogleAnalyticsPropertyTool);
@@ -342,8 +330,6 @@ export function registerOpenSeoTools(
   register(getAuditStatusTool);
   register(getAuditIssuesTool);
   register(getAuditPagesTool);
-  register(runContentOptimizationTool);
-  register(getContentOptimizationTool);
   register(saveReportTool);
   register(listReportsTool);
   register(getReportTool);

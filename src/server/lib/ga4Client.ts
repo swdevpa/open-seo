@@ -1,6 +1,6 @@
 /* eslint-disable max-lines -- one client module per Google integration (gscClient precedent); GA4 spans the Admin and Data APIs */
 import { z } from "zod";
-import { mintGoogleAccessToken } from "@/server/lib/googleAccessToken";
+import { getGoogleAccessToken } from "@/server/features/google/googleOAuth";
 import { getGoogleAccessMode } from "@/server/features/google/googleAccess";
 import { getGatewayGoogleFetch } from "@/server/features/google/gatewayGoogle";
 import {
@@ -131,7 +131,7 @@ async function getGa4AccessToken(opts: {
   ga4AccountId: string;
 }): Promise<string> {
   try {
-    return await mintGoogleAccessToken({
+    return await getGoogleAccessToken({
       providerId: GA4_OAUTH_PROVIDER_ID,
       userId: opts.userId,
       accountId: opts.ga4AccountId,

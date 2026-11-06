@@ -1,4 +1,3 @@
-import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
 import { AppError } from "@/server/lib/errors";
@@ -14,8 +13,6 @@ const INDEXNOW_ENDPOINTS = [
   "https://indexnow.yep.com/indexnow",
 ];
 const REQUEST_TIMEOUT_MS = 10_000;
-// Protocol limit per request.
-const INDEXNOW_MAX_URLS = 10_000;
 
 interface ProjectScope {
   projectId: string;
@@ -270,33 +267,9 @@ async function submitUrls(scope: ProjectScope, urls: string[]) {
   return { key, keyCreated: created, hosts, skipped };
 }
 
-/**
- * Submits every page of an audit a search engine should index: fetched
- * successfully, indexable, and not hidden behind bot protection.
- */
-async function submitAuditPages(scope: ProjectScope, auditId: string) {
-  const audit = await AuditRepository.getAuditForProject(
-    auditId,
-    scope.projectId,
-  );
-  if (!audit) throw new AppError("NOT_FOUND");
-  const pages = await AuditRepository.getPagesForAudit(auditId);
-  const urls = pages
-    .filter(
-      (page) =>
-        page.statusCode === 200 &&
-        page.isIndexable &&
-        page.fetchClass !== "blocked",
-    )
-    .map((page) => page.url)
-    .slice(0, INDEXNOW_MAX_URLS);
-  return submitUrls(scope, urls);
-}
-
 export const IndexNowService = {
   getSetup,
   setUp,
   checkKeyFiles,
   submitUrls,
-  submitAuditPages,
 } as const;

@@ -53,7 +53,6 @@ import { Route as AppPProjectIdIndexRouteImport } from './routes/_app/p/$project
 import { Route as AppPProjectIdAiVisibilityRouteImport } from './routes/_app/p/$projectId/ai-visibility'
 import { Route as AppPProjectIdBacklinksRouteImport } from './routes/_app/p/$projectId/backlinks'
 import { Route as AppPProjectIdBrandLookupRouteImport } from './routes/_app/p/$projectId/brand-lookup'
-import { Route as AppPProjectIdContentOptimizationRouteImport } from './routes/_app/p/$projectId/content-optimization'
 import { Route as AppPProjectIdContextRouteImport } from './routes/_app/p/$projectId/context'
 import { Route as AppPProjectIdDomainRouteImport } from './routes/_app/p/$projectId/domain'
 import { Route as AppPProjectIdKeywordsRouteImport } from './routes/_app/p/$projectId/keywords'
@@ -64,10 +63,8 @@ import { Route as AppPProjectIdSamRouteImport } from './routes/_app/p/$projectId
 import { Route as AppPProjectIdSavedRouteImport } from './routes/_app/p/$projectId/saved'
 import { Route as AppPProjectIdSearchPerformanceRouteImport } from './routes/_app/p/$projectId/search-performance'
 import { Route as AppPProjectIdSettingsRouteImport } from './routes/_app/p/$projectId/settings'
-import { Route as AppPProjectIdYoutubeRouteImport } from './routes/_app/p/$projectId/youtube'
 import { Route as ApiGa4OauthCallbackRouteImport } from './routes/api/ga4/oauth/callback'
 import { Route as ApiGscOauthCallbackRouteImport } from './routes/api/gsc/oauth/callback'
-import { Route as ApiYoutubeOauthCallbackRouteImport } from './routes/api/youtube/oauth/callback'
 import { Route as AppPProjectIdAiVisibilityIndexRouteImport } from './routes/_app/p/$projectId/ai-visibility/index'
 import { Route as AppPProjectIdAiVisibilityResearchRouteImport } from './routes/_app/p/$projectId/ai-visibility/research'
 import { Route as AppPProjectIdAuditIndexRouteImport } from './routes/_app/p/$projectId/audit/index'
@@ -81,8 +78,6 @@ import { Route as AppPProjectIdReportsTemplatesRouteImport } from './routes/_app
 import { Route as AppPProjectIdSettingsIndexRouteImport } from './routes/_app/p/$projectId/settings/index'
 import { Route as AppPProjectIdSettingsContextRouteImport } from './routes/_app/p/$projectId/settings/context'
 import { Route as AppPProjectIdSettingsIntegrationsRouteImport } from './routes/_app/p/$projectId/settings/integrations'
-import { Route as AppPProjectIdYoutubeIndexRouteImport } from './routes/_app/p/$projectId/youtube/index'
-import { Route as AppPProjectIdYoutubeChannelIdRouteImport } from './routes/_app/p/$projectId/youtube/$channelId'
 import { Route as ReportMapGrantZXYRouteImport } from './routes/report-map/$grant/$z/$x/$y'
 import { Route as AppPProjectIdAiVisibilityPromptsPromptIdRouteImport } from './routes/_app/p/$projectId/ai-visibility/prompts/$promptId'
 import { Route as AppPProjectIdAuditIssuesResultIdRouteImport } from './routes/_app/p/$projectId/audit/issues/$resultId'
@@ -311,12 +306,6 @@ const AppPProjectIdBrandLookupRoute =
     path: '/brand-lookup',
     getParentRoute: () => AppPProjectIdRouteRoute,
   } as any)
-const AppPProjectIdContentOptimizationRoute =
-  AppPProjectIdContentOptimizationRouteImport.update({
-    id: '/content-optimization',
-    path: '/content-optimization',
-    getParentRoute: () => AppPProjectIdRouteRoute,
-  } as any)
 const AppPProjectIdContextRoute = AppPProjectIdContextRouteImport.update({
   id: '/context',
   path: '/context',
@@ -370,11 +359,6 @@ const AppPProjectIdSettingsRoute = AppPProjectIdSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppPProjectIdRouteRoute,
 } as any)
-const AppPProjectIdYoutubeRoute = AppPProjectIdYoutubeRouteImport.update({
-  id: '/youtube',
-  path: '/youtube',
-  getParentRoute: () => AppPProjectIdRouteRoute,
-} as any)
 const ApiGa4OauthCallbackRoute = ApiGa4OauthCallbackRouteImport.update({
   id: '/api/ga4/oauth/callback',
   path: '/api/ga4/oauth/callback',
@@ -383,11 +367,6 @@ const ApiGa4OauthCallbackRoute = ApiGa4OauthCallbackRouteImport.update({
 const ApiGscOauthCallbackRoute = ApiGscOauthCallbackRouteImport.update({
   id: '/api/gsc/oauth/callback',
   path: '/api/gsc/oauth/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiYoutubeOauthCallbackRoute = ApiYoutubeOauthCallbackRouteImport.update({
-  id: '/api/youtube/oauth/callback',
-  path: '/api/youtube/oauth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppPProjectIdAiVisibilityIndexRoute =
@@ -467,18 +446,6 @@ const AppPProjectIdSettingsIntegrationsRoute =
     path: '/integrations',
     getParentRoute: () => AppPProjectIdSettingsRoute,
   } as any)
-const AppPProjectIdYoutubeIndexRoute =
-  AppPProjectIdYoutubeIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AppPProjectIdYoutubeRoute,
-  } as any)
-const AppPProjectIdYoutubeChannelIdRoute =
-  AppPProjectIdYoutubeChannelIdRouteImport.update({
-    id: '/$channelId',
-    path: '/$channelId',
-    getParentRoute: () => AppPProjectIdYoutubeRoute,
-  } as any)
 const ReportMapGrantZXYRoute = ReportMapGrantZXYRouteImport.update({
   id: '/report-map/$grant/$z/$x/$y',
   path: '/report-map/$grant/$z/$x/$y',
@@ -544,7 +511,6 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/ai-visibility': typeof AppPProjectIdAiVisibilityRouteWithChildren
   '/p/$projectId/backlinks': typeof AppPProjectIdBacklinksRoute
   '/p/$projectId/brand-lookup': typeof AppPProjectIdBrandLookupRoute
-  '/p/$projectId/content-optimization': typeof AppPProjectIdContentOptimizationRoute
   '/p/$projectId/context': typeof AppPProjectIdContextRoute
   '/p/$projectId/domain': typeof AppPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof AppPProjectIdKeywordsRoute
@@ -555,10 +521,8 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/saved': typeof AppPProjectIdSavedRoute
   '/p/$projectId/search-performance': typeof AppPProjectIdSearchPerformanceRoute
   '/p/$projectId/settings': typeof AppPProjectIdSettingsRouteWithChildren
-  '/p/$projectId/youtube': typeof AppPProjectIdYoutubeRouteWithChildren
   '/api/ga4/oauth/callback': typeof ApiGa4OauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
-  '/api/youtube/oauth/callback': typeof ApiYoutubeOauthCallbackRoute
   '/p/$projectId/': typeof AppPProjectIdIndexRoute
   '/p/$projectId/ai-visibility/research': typeof AppPProjectIdAiVisibilityResearchRoute
   '/p/$projectId/local-seo/$trackerId': typeof AppPProjectIdLocalSeoTrackerIdRoute
@@ -567,7 +531,6 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/reports/templates': typeof AppPProjectIdReportsTemplatesRoute
   '/p/$projectId/settings/context': typeof AppPProjectIdSettingsContextRoute
   '/p/$projectId/settings/integrations': typeof AppPProjectIdSettingsIntegrationsRoute
-  '/p/$projectId/youtube/$channelId': typeof AppPProjectIdYoutubeChannelIdRoute
   '/report-map/$grant/$z/$x/$y': typeof ReportMapGrantZXYRoute
   '/p/$projectId/ai-visibility/': typeof AppPProjectIdAiVisibilityIndexRoute
   '/p/$projectId/audit/': typeof AppPProjectIdAuditIndexRoute
@@ -575,7 +538,6 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/rank-tracking/': typeof AppPProjectIdRankTrackingIndexRoute
   '/p/$projectId/reports/': typeof AppPProjectIdReportsIndexRoute
   '/p/$projectId/settings/': typeof AppPProjectIdSettingsIndexRoute
-  '/p/$projectId/youtube/': typeof AppPProjectIdYoutubeIndexRoute
   '/p/$projectId/ai-visibility/prompts/$promptId': typeof AppPProjectIdAiVisibilityPromptsPromptIdRoute
   '/p/$projectId/audit/issues/$resultId': typeof AppPProjectIdAuditIssuesResultIdRoute
   '/api/local-seo/maps/$projectId/$z/$x/$y': typeof ApiLocalSeoMapsProjectIdZXYRoute
@@ -618,7 +580,6 @@ export interface FileRoutesByTo {
   '/s/$token': typeof STokenIndexRoute
   '/p/$projectId/backlinks': typeof AppPProjectIdBacklinksRoute
   '/p/$projectId/brand-lookup': typeof AppPProjectIdBrandLookupRoute
-  '/p/$projectId/content-optimization': typeof AppPProjectIdContentOptimizationRoute
   '/p/$projectId/context': typeof AppPProjectIdContextRoute
   '/p/$projectId/domain': typeof AppPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof AppPProjectIdKeywordsRoute
@@ -628,7 +589,6 @@ export interface FileRoutesByTo {
   '/p/$projectId/search-performance': typeof AppPProjectIdSearchPerformanceRoute
   '/api/ga4/oauth/callback': typeof ApiGa4OauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
-  '/api/youtube/oauth/callback': typeof ApiYoutubeOauthCallbackRoute
   '/p/$projectId': typeof AppPProjectIdIndexRoute
   '/p/$projectId/ai-visibility/research': typeof AppPProjectIdAiVisibilityResearchRoute
   '/p/$projectId/local-seo/$trackerId': typeof AppPProjectIdLocalSeoTrackerIdRoute
@@ -637,7 +597,6 @@ export interface FileRoutesByTo {
   '/p/$projectId/reports/templates': typeof AppPProjectIdReportsTemplatesRoute
   '/p/$projectId/settings/context': typeof AppPProjectIdSettingsContextRoute
   '/p/$projectId/settings/integrations': typeof AppPProjectIdSettingsIntegrationsRoute
-  '/p/$projectId/youtube/$channelId': typeof AppPProjectIdYoutubeChannelIdRoute
   '/report-map/$grant/$z/$x/$y': typeof ReportMapGrantZXYRoute
   '/p/$projectId/ai-visibility': typeof AppPProjectIdAiVisibilityIndexRoute
   '/p/$projectId/audit': typeof AppPProjectIdAuditIndexRoute
@@ -645,7 +604,6 @@ export interface FileRoutesByTo {
   '/p/$projectId/rank-tracking': typeof AppPProjectIdRankTrackingIndexRoute
   '/p/$projectId/reports': typeof AppPProjectIdReportsIndexRoute
   '/p/$projectId/settings': typeof AppPProjectIdSettingsIndexRoute
-  '/p/$projectId/youtube': typeof AppPProjectIdYoutubeIndexRoute
   '/p/$projectId/ai-visibility/prompts/$promptId': typeof AppPProjectIdAiVisibilityPromptsPromptIdRoute
   '/p/$projectId/audit/issues/$resultId': typeof AppPProjectIdAuditIssuesResultIdRoute
   '/api/local-seo/maps/$projectId/$z/$x/$y': typeof ApiLocalSeoMapsProjectIdZXYRoute
@@ -695,7 +653,6 @@ export interface FileRoutesById {
   '/_app/p/$projectId/ai-visibility': typeof AppPProjectIdAiVisibilityRouteWithChildren
   '/_app/p/$projectId/backlinks': typeof AppPProjectIdBacklinksRoute
   '/_app/p/$projectId/brand-lookup': typeof AppPProjectIdBrandLookupRoute
-  '/_app/p/$projectId/content-optimization': typeof AppPProjectIdContentOptimizationRoute
   '/_app/p/$projectId/context': typeof AppPProjectIdContextRoute
   '/_app/p/$projectId/domain': typeof AppPProjectIdDomainRoute
   '/_app/p/$projectId/keywords': typeof AppPProjectIdKeywordsRoute
@@ -706,10 +663,8 @@ export interface FileRoutesById {
   '/_app/p/$projectId/saved': typeof AppPProjectIdSavedRoute
   '/_app/p/$projectId/search-performance': typeof AppPProjectIdSearchPerformanceRoute
   '/_app/p/$projectId/settings': typeof AppPProjectIdSettingsRouteWithChildren
-  '/_app/p/$projectId/youtube': typeof AppPProjectIdYoutubeRouteWithChildren
   '/api/ga4/oauth/callback': typeof ApiGa4OauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
-  '/api/youtube/oauth/callback': typeof ApiYoutubeOauthCallbackRoute
   '/_app/p/$projectId/': typeof AppPProjectIdIndexRoute
   '/_app/p/$projectId/ai-visibility/research': typeof AppPProjectIdAiVisibilityResearchRoute
   '/_app/p/$projectId/local-seo/$trackerId': typeof AppPProjectIdLocalSeoTrackerIdRoute
@@ -718,7 +673,6 @@ export interface FileRoutesById {
   '/_app/p/$projectId/reports/templates': typeof AppPProjectIdReportsTemplatesRoute
   '/_app/p/$projectId/settings/context': typeof AppPProjectIdSettingsContextRoute
   '/_app/p/$projectId/settings/integrations': typeof AppPProjectIdSettingsIntegrationsRoute
-  '/_app/p/$projectId/youtube/$channelId': typeof AppPProjectIdYoutubeChannelIdRoute
   '/report-map/$grant/$z/$x/$y': typeof ReportMapGrantZXYRoute
   '/_app/p/$projectId/ai-visibility/': typeof AppPProjectIdAiVisibilityIndexRoute
   '/_app/p/$projectId/audit/': typeof AppPProjectIdAuditIndexRoute
@@ -726,7 +680,6 @@ export interface FileRoutesById {
   '/_app/p/$projectId/rank-tracking/': typeof AppPProjectIdRankTrackingIndexRoute
   '/_app/p/$projectId/reports/': typeof AppPProjectIdReportsIndexRoute
   '/_app/p/$projectId/settings/': typeof AppPProjectIdSettingsIndexRoute
-  '/_app/p/$projectId/youtube/': typeof AppPProjectIdYoutubeIndexRoute
   '/_app/p/$projectId/ai-visibility/prompts/$promptId': typeof AppPProjectIdAiVisibilityPromptsPromptIdRoute
   '/_app/p/$projectId/audit/issues/$resultId': typeof AppPProjectIdAuditIssuesResultIdRoute
   '/api/local-seo/maps/$projectId/$z/$x/$y': typeof ApiLocalSeoMapsProjectIdZXYRoute
@@ -774,7 +727,6 @@ export interface FileRouteTypes {
     | '/p/$projectId/ai-visibility'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/brand-lookup'
-    | '/p/$projectId/content-optimization'
     | '/p/$projectId/context'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
@@ -785,10 +737,8 @@ export interface FileRouteTypes {
     | '/p/$projectId/saved'
     | '/p/$projectId/search-performance'
     | '/p/$projectId/settings'
-    | '/p/$projectId/youtube'
     | '/api/ga4/oauth/callback'
     | '/api/gsc/oauth/callback'
-    | '/api/youtube/oauth/callback'
     | '/p/$projectId/'
     | '/p/$projectId/ai-visibility/research'
     | '/p/$projectId/local-seo/$trackerId'
@@ -797,7 +747,6 @@ export interface FileRouteTypes {
     | '/p/$projectId/reports/templates'
     | '/p/$projectId/settings/context'
     | '/p/$projectId/settings/integrations'
-    | '/p/$projectId/youtube/$channelId'
     | '/report-map/$grant/$z/$x/$y'
     | '/p/$projectId/ai-visibility/'
     | '/p/$projectId/audit/'
@@ -805,7 +754,6 @@ export interface FileRouteTypes {
     | '/p/$projectId/rank-tracking/'
     | '/p/$projectId/reports/'
     | '/p/$projectId/settings/'
-    | '/p/$projectId/youtube/'
     | '/p/$projectId/ai-visibility/prompts/$promptId'
     | '/p/$projectId/audit/issues/$resultId'
     | '/api/local-seo/maps/$projectId/$z/$x/$y'
@@ -848,7 +796,6 @@ export interface FileRouteTypes {
     | '/s/$token'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/brand-lookup'
-    | '/p/$projectId/content-optimization'
     | '/p/$projectId/context'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
@@ -858,7 +805,6 @@ export interface FileRouteTypes {
     | '/p/$projectId/search-performance'
     | '/api/ga4/oauth/callback'
     | '/api/gsc/oauth/callback'
-    | '/api/youtube/oauth/callback'
     | '/p/$projectId'
     | '/p/$projectId/ai-visibility/research'
     | '/p/$projectId/local-seo/$trackerId'
@@ -867,7 +813,6 @@ export interface FileRouteTypes {
     | '/p/$projectId/reports/templates'
     | '/p/$projectId/settings/context'
     | '/p/$projectId/settings/integrations'
-    | '/p/$projectId/youtube/$channelId'
     | '/report-map/$grant/$z/$x/$y'
     | '/p/$projectId/ai-visibility'
     | '/p/$projectId/audit'
@@ -875,7 +820,6 @@ export interface FileRouteTypes {
     | '/p/$projectId/rank-tracking'
     | '/p/$projectId/reports'
     | '/p/$projectId/settings'
-    | '/p/$projectId/youtube'
     | '/p/$projectId/ai-visibility/prompts/$promptId'
     | '/p/$projectId/audit/issues/$resultId'
     | '/api/local-seo/maps/$projectId/$z/$x/$y'
@@ -924,7 +868,6 @@ export interface FileRouteTypes {
     | '/_app/p/$projectId/ai-visibility'
     | '/_app/p/$projectId/backlinks'
     | '/_app/p/$projectId/brand-lookup'
-    | '/_app/p/$projectId/content-optimization'
     | '/_app/p/$projectId/context'
     | '/_app/p/$projectId/domain'
     | '/_app/p/$projectId/keywords'
@@ -935,10 +878,8 @@ export interface FileRouteTypes {
     | '/_app/p/$projectId/saved'
     | '/_app/p/$projectId/search-performance'
     | '/_app/p/$projectId/settings'
-    | '/_app/p/$projectId/youtube'
     | '/api/ga4/oauth/callback'
     | '/api/gsc/oauth/callback'
-    | '/api/youtube/oauth/callback'
     | '/_app/p/$projectId/'
     | '/_app/p/$projectId/ai-visibility/research'
     | '/_app/p/$projectId/local-seo/$trackerId'
@@ -947,7 +888,6 @@ export interface FileRouteTypes {
     | '/_app/p/$projectId/reports/templates'
     | '/_app/p/$projectId/settings/context'
     | '/_app/p/$projectId/settings/integrations'
-    | '/_app/p/$projectId/youtube/$channelId'
     | '/report-map/$grant/$z/$x/$y'
     | '/_app/p/$projectId/ai-visibility/'
     | '/_app/p/$projectId/audit/'
@@ -955,7 +895,6 @@ export interface FileRouteTypes {
     | '/_app/p/$projectId/rank-tracking/'
     | '/_app/p/$projectId/reports/'
     | '/_app/p/$projectId/settings/'
-    | '/_app/p/$projectId/youtube/'
     | '/_app/p/$projectId/ai-visibility/prompts/$promptId'
     | '/_app/p/$projectId/audit/issues/$resultId'
     | '/api/local-seo/maps/$projectId/$z/$x/$y'
@@ -986,7 +925,6 @@ export interface RootRouteChildren {
   STokenIndexRoute: typeof STokenIndexRoute
   ApiGa4OauthCallbackRoute: typeof ApiGa4OauthCallbackRoute
   ApiGscOauthCallbackRoute: typeof ApiGscOauthCallbackRoute
-  ApiYoutubeOauthCallbackRoute: typeof ApiYoutubeOauthCallbackRoute
   ReportMapGrantZXYRoute: typeof ReportMapGrantZXYRoute
   ApiLocalSeoMapsProjectIdZXYRoute: typeof ApiLocalSeoMapsProjectIdZXYRoute
 }
@@ -1301,13 +1239,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectIdBrandLookupRouteImport
       parentRoute: typeof AppPProjectIdRouteRoute
     }
-    '/_app/p/$projectId/content-optimization': {
-      id: '/_app/p/$projectId/content-optimization'
-      path: '/content-optimization'
-      fullPath: '/p/$projectId/content-optimization'
-      preLoaderRoute: typeof AppPProjectIdContentOptimizationRouteImport
-      parentRoute: typeof AppPProjectIdRouteRoute
-    }
     '/_app/p/$projectId/context': {
       id: '/_app/p/$projectId/context'
       path: '/context'
@@ -1378,13 +1309,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPProjectIdSettingsRouteImport
       parentRoute: typeof AppPProjectIdRouteRoute
     }
-    '/_app/p/$projectId/youtube': {
-      id: '/_app/p/$projectId/youtube'
-      path: '/youtube'
-      fullPath: '/p/$projectId/youtube'
-      preLoaderRoute: typeof AppPProjectIdYoutubeRouteImport
-      parentRoute: typeof AppPProjectIdRouteRoute
-    }
     '/api/ga4/oauth/callback': {
       id: '/api/ga4/oauth/callback'
       path: '/api/ga4/oauth/callback'
@@ -1397,13 +1321,6 @@ declare module '@tanstack/react-router' {
       path: '/api/gsc/oauth/callback'
       fullPath: '/api/gsc/oauth/callback'
       preLoaderRoute: typeof ApiGscOauthCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/youtube/oauth/callback': {
-      id: '/api/youtube/oauth/callback'
-      path: '/api/youtube/oauth/callback'
-      fullPath: '/api/youtube/oauth/callback'
-      preLoaderRoute: typeof ApiYoutubeOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/p/$projectId/ai-visibility/': {
@@ -1496,20 +1413,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$projectId/settings/integrations'
       preLoaderRoute: typeof AppPProjectIdSettingsIntegrationsRouteImport
       parentRoute: typeof AppPProjectIdSettingsRoute
-    }
-    '/_app/p/$projectId/youtube/': {
-      id: '/_app/p/$projectId/youtube/'
-      path: '/'
-      fullPath: '/p/$projectId/youtube/'
-      preLoaderRoute: typeof AppPProjectIdYoutubeIndexRouteImport
-      parentRoute: typeof AppPProjectIdYoutubeRoute
-    }
-    '/_app/p/$projectId/youtube/$channelId': {
-      id: '/_app/p/$projectId/youtube/$channelId'
-      path: '/$channelId'
-      fullPath: '/p/$projectId/youtube/$channelId'
-      preLoaderRoute: typeof AppPProjectIdYoutubeChannelIdRouteImport
-      parentRoute: typeof AppPProjectIdYoutubeRoute
     }
     '/report-map/$grant/$z/$x/$y': {
       id: '/report-map/$grant/$z/$x/$y'
@@ -1626,24 +1529,10 @@ const AppPProjectIdSettingsRouteWithChildren =
     AppPProjectIdSettingsRouteChildren,
   )
 
-interface AppPProjectIdYoutubeRouteChildren {
-  AppPProjectIdYoutubeChannelIdRoute: typeof AppPProjectIdYoutubeChannelIdRoute
-  AppPProjectIdYoutubeIndexRoute: typeof AppPProjectIdYoutubeIndexRoute
-}
-
-const AppPProjectIdYoutubeRouteChildren: AppPProjectIdYoutubeRouteChildren = {
-  AppPProjectIdYoutubeChannelIdRoute: AppPProjectIdYoutubeChannelIdRoute,
-  AppPProjectIdYoutubeIndexRoute: AppPProjectIdYoutubeIndexRoute,
-}
-
-const AppPProjectIdYoutubeRouteWithChildren =
-  AppPProjectIdYoutubeRoute._addFileChildren(AppPProjectIdYoutubeRouteChildren)
-
 interface AppPProjectIdRouteRouteChildren {
   AppPProjectIdAiVisibilityRoute: typeof AppPProjectIdAiVisibilityRouteWithChildren
   AppPProjectIdBacklinksRoute: typeof AppPProjectIdBacklinksRoute
   AppPProjectIdBrandLookupRoute: typeof AppPProjectIdBrandLookupRoute
-  AppPProjectIdContentOptimizationRoute: typeof AppPProjectIdContentOptimizationRoute
   AppPProjectIdContextRoute: typeof AppPProjectIdContextRoute
   AppPProjectIdDomainRoute: typeof AppPProjectIdDomainRoute
   AppPProjectIdKeywordsRoute: typeof AppPProjectIdKeywordsRoute
@@ -1654,7 +1543,6 @@ interface AppPProjectIdRouteRouteChildren {
   AppPProjectIdSavedRoute: typeof AppPProjectIdSavedRoute
   AppPProjectIdSearchPerformanceRoute: typeof AppPProjectIdSearchPerformanceRoute
   AppPProjectIdSettingsRoute: typeof AppPProjectIdSettingsRouteWithChildren
-  AppPProjectIdYoutubeRoute: typeof AppPProjectIdYoutubeRouteWithChildren
   AppPProjectIdIndexRoute: typeof AppPProjectIdIndexRoute
   AppPProjectIdReportsReportIdRoute: typeof AppPProjectIdReportsReportIdRoute
   AppPProjectIdReportsTemplatesRoute: typeof AppPProjectIdReportsTemplatesRoute
@@ -1667,7 +1555,6 @@ const AppPProjectIdRouteRouteChildren: AppPProjectIdRouteRouteChildren = {
   AppPProjectIdAiVisibilityRoute: AppPProjectIdAiVisibilityRouteWithChildren,
   AppPProjectIdBacklinksRoute: AppPProjectIdBacklinksRoute,
   AppPProjectIdBrandLookupRoute: AppPProjectIdBrandLookupRoute,
-  AppPProjectIdContentOptimizationRoute: AppPProjectIdContentOptimizationRoute,
   AppPProjectIdContextRoute: AppPProjectIdContextRoute,
   AppPProjectIdDomainRoute: AppPProjectIdDomainRoute,
   AppPProjectIdKeywordsRoute: AppPProjectIdKeywordsRoute,
@@ -1678,7 +1565,6 @@ const AppPProjectIdRouteRouteChildren: AppPProjectIdRouteRouteChildren = {
   AppPProjectIdSavedRoute: AppPProjectIdSavedRoute,
   AppPProjectIdSearchPerformanceRoute: AppPProjectIdSearchPerformanceRoute,
   AppPProjectIdSettingsRoute: AppPProjectIdSettingsRouteWithChildren,
-  AppPProjectIdYoutubeRoute: AppPProjectIdYoutubeRouteWithChildren,
   AppPProjectIdIndexRoute: AppPProjectIdIndexRoute,
   AppPProjectIdReportsReportIdRoute: AppPProjectIdReportsReportIdRoute,
   AppPProjectIdReportsTemplatesRoute: AppPProjectIdReportsTemplatesRoute,
@@ -1777,7 +1663,6 @@ const rootRouteChildren: RootRouteChildren = {
   STokenIndexRoute: STokenIndexRoute,
   ApiGa4OauthCallbackRoute: ApiGa4OauthCallbackRoute,
   ApiGscOauthCallbackRoute: ApiGscOauthCallbackRoute,
-  ApiYoutubeOauthCallbackRoute: ApiYoutubeOauthCallbackRoute,
   ReportMapGrantZXYRoute: ReportMapGrantZXYRoute,
   ApiLocalSeoMapsProjectIdZXYRoute: ApiLocalSeoMapsProjectIdZXYRoute,
 }

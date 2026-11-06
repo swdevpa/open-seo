@@ -11,9 +11,7 @@ import {
   MapPin,
   MessageSquare,
   Search,
-  ScanSearch,
   TrendingUp,
-  Youtube,
 } from "lucide-react";
 import { linkOptions } from "@tanstack/react-router";
 import { GoogleGlyphMuted } from "@/client/features/gsc/GoogleGlyph";
@@ -53,11 +51,6 @@ const projectNavItems = [
     icon: GoogleGlyphMuted,
   },
   {
-    to: "/p/$projectId/youtube" as const,
-    label: "YouTube",
-    icon: Youtube,
-  },
-  {
     to: "/p/$projectId/domain" as const,
     label: "Domain Overview",
     icon: Globe,
@@ -87,11 +80,6 @@ const projectNavItems = [
     to: "/p/$projectId/prompt-explorer" as const,
     label: "Prompt Explorer",
     icon: MessageSquare,
-  },
-  {
-    to: "/p/$projectId/content-optimization" as const,
-    label: "Content Optimization",
-    icon: ScanSearch,
   },
   {
     to: "/p/$projectId/reports" as const,
@@ -148,7 +136,6 @@ export function getProjectNavGroups(projectId: string) {
         byPath("/p/$projectId/keywords"),
         byPath("/p/$projectId/domain"),
         byPath("/p/$projectId/backlinks"),
-        byPath("/p/$projectId/content-optimization"),
       ],
     },
     {
@@ -163,7 +150,6 @@ export function getProjectNavGroups(projectId: string) {
       label: "My Site",
       items: [
         byPath("/p/$projectId/search-performance"),
-        byPath("/p/$projectId/youtube"),
         byPath("/p/$projectId/rank-tracking"),
         byPath("/p/$projectId/local-seo"),
         byPath("/p/$projectId/saved"),

@@ -146,7 +146,6 @@ OpenSEO MCP exposes tools for SEO research workflows:
 - List saved keywords from an OpenSEO project.
 - Save useful keywords back to OpenSEO.
 - Create and run rank trackers, add or remove keywords, and read the latest positions and rank history. Estimating a check's cost is free; running one uses credits.
-- Set webhook alerts for a rank tracker (big position drops, falling out of the top 10, entering the top 3).
 - Summarize a domain's organic footprint.
 - Find keywords a domain already ranks for.
 - Check backlink and referring-domain overview data.
@@ -157,9 +156,6 @@ OpenSEO MCP exposes tools for SEO research workflows:
 - List the Search Console sites and Google Analytics properties your connected Google accounts can see, and bind one to a project (free, no credits). Connecting a Google account itself still happens in Settings > Integrations.
 - Read first-party Google Search Console performance (clicks, impressions, CTR, position).
 - Inspect index status, crawl, and canonical for specific URLs (up to 10 per call).
-- Diagnose an organic traffic drop: compare two periods in Search Console, check the losing pages against the latest site audit and Google Analytics, and rank the likely causes.
-- Find decaying content: pages whose Search Console clicks fell month after month, with their top query and position.
-- Enable IndexNow for a project and get the key file your agent should publish on the site.
 - Tell Bing and other IndexNow search engines which pages on your site were added, changed, or removed (free, no credits). Your site hosts the project's key file, shown in Settings > Integrations. Google doesn't use IndexNow.
 - Read and update a project's shared context: business, goal, positioning, writing preferences, competitors, key pages, and a research log (free, no credits).
 - Save and read HTML reports on a project (free, no credits). New reports are private. On hosted OpenSEO, explicitly ask the agent to publish with `set_report_sharing` (`public: true`) or revoke the link (`public: false`). `get_report` returns `report.shareUrl` for an existing public link, or `null` when unavailable.

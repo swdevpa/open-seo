@@ -32,8 +32,7 @@ beforeAll(async () => {
       id TEXT PRIMARY KEY, project_id TEXT, domain TEXT, location_code INTEGER,
       language_code TEXT, devices TEXT, serp_depth INTEGER, schedule_interval TEXT,
       location_name TEXT, is_active INTEGER, last_checked_at TEXT, next_check_at TEXT,
-      last_skip_reason TEXT, alert_webhook_url TEXT, alert_position_drop INTEGER,
-      alert_left_top_10 INTEGER, alert_entered_top_3 INTEGER, created_at TEXT
+      last_skip_reason TEXT, created_at TEXT
     );
     CREATE TABLE rank_tracking_keywords (
       id TEXT PRIMARY KEY, config_id TEXT, keyword TEXT, match_case INTEGER,

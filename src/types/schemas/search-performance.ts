@@ -88,16 +88,10 @@ export const searchPerformanceTableExportInputSchema = z.object({
   dimension: z.enum(SEARCH_PERFORMANCE_TABLE_DIMENSIONS),
 });
 
-/** Content decay compares complete calendar months, not a date range. */
-export const CONTENT_DECAY_MONTHS = [2, 3, 6] as const;
-export const CONTENT_DECAY_DEFAULT_MONTHS = 3;
-export const CONTENT_DECAY_MAX_MONTHS = 12;
-
 export const SEARCH_PERFORMANCE_TABS = [
   "striking",
   "queries",
   "pages",
-  "decay",
 ] as const;
 export type SearchPerformanceTab = (typeof SEARCH_PERFORMANCE_TABS)[number];
 
@@ -125,26 +119,8 @@ export const searchPerformanceSearchSchema = z.object({
     )
     .optional()
     .catch(undefined),
-  /** Content decay tab: how many months of decline to look for. */
-  months: z.coerce
-    .number()
-    .refine((value) =>
-      (CONTENT_DECAY_MONTHS as readonly number[]).includes(value),
-    )
-    .optional()
-    .catch(undefined),
 });
 
 export type SearchPerformanceSearch = z.infer<
   typeof searchPerformanceSearchSchema
 >;
-
-export const contentDecayInputSchema = z.object({
-  projectId: z.string().min(1),
-  months: z
-    .number()
-    .int()
-    .min(2)
-    .max(CONTENT_DECAY_MAX_MONTHS)
-    .default(CONTENT_DECAY_DEFAULT_MONTHS),
-});

@@ -1,4 +1,3 @@
-/* eslint-disable max-lines -- fork: upstream keeps this file near the limit and the fork adds the content optimization meter; kept inline so upstream merges stay clean */
 import { waitUntil } from "cloudflare:workers";
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import { creditsForProviderUsd } from "@/shared/billing";
@@ -51,7 +50,6 @@ import {
   postRankCheckTasks,
 } from "@/server/lib/dataforseo/serp";
 import { fetchLighthouseResult } from "@/server/lib/dataforseo/lighthouse";
-import { fetchContentOptimizationSource } from "@/server/lib/dataforseo/content-optimization";
 import {
   fetchLlmAggregatedMetrics,
   fetchLlmCrossAggregatedMetrics,
@@ -290,14 +288,6 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         fetchLighthouseResult,
         dataforseoPricing.lighthouse.live,
         "site_audit",
-      ),
-    },
-    contentOptimization: {
-      scan: meter(
-        customer,
-        fetchContentOptimizationSource,
-        dataforseoPricing.contentOptimization.scan,
-        "content_optimization",
       ),
     },
     aiSearch: {

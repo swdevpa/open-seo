@@ -12,9 +12,6 @@ vi.mock("@/server/features/gsc/services/GscService", () => ({
   GscNotConnectedError: class extends Error {},
   isExpectedGrantFailure: () => false,
 }));
-vi.mock("@/server/features/gsc/services/ContentDecayService", () => ({
-  ContentDecayService: {},
-}));
 vi.mock("@/serverFunctions/middleware", () => ({ requireProjectContext: [] }));
 vi.mock("@tanstack/react-start", () => ({
   createServerFn: () => ({

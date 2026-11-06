@@ -5,7 +5,6 @@ import {
 } from "@tanstack/react-router";
 import { SearchPerformancePage } from "@/client/features/search-performance/SearchPerformancePage";
 import {
-  CONTENT_DECAY_DEFAULT_MONTHS,
   SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE,
   searchPerformanceSearchSchema,
 } from "@/types/schemas/search-performance";
@@ -21,7 +20,6 @@ export const Route = createFileRoute("/_app/p/$projectId/search-performance")({
         range: "last_28_days",
         page: 1,
         size: SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE,
-        months: CONTENT_DECAY_DEFAULT_MONTHS,
       }),
     ],
   },

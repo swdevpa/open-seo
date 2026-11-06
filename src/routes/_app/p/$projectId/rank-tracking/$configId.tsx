@@ -8,7 +8,6 @@ import { QueryError } from "@/client/components/QueryState";
 import { EmptyState } from "@/client/components/EmptyState";
 import { Button } from "@/client/components/ui/button";
 import { RankTrackingConfigModal } from "@/client/features/rank-tracking/RankTrackingConfigModal";
-import { RankTrackingAlertSettings } from "@/client/features/rank-tracking/RankTrackingAlertSettings";
 import { rankTrackingDetailSearchSchema } from "@/types/schemas/rank-tracking-search";
 
 export const Route = createFileRoute(
@@ -94,14 +93,6 @@ function RankTrackingConfigRoute() {
         }}
         onEdit={() => setShowConfigModal(true)}
       />
-
-      <div className="mt-6">
-        <RankTrackingAlertSettings
-          config={config}
-          projectId={projectId}
-          onSaved={invalidateConfigs}
-        />
-      </div>
 
       {showConfigModal && (
         <RankTrackingConfigModal

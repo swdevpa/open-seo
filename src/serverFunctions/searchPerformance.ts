@@ -15,10 +15,8 @@ import {
   sumSearchTotals,
   toDimensionRows,
 } from "@/server/features/gsc/searchPerformanceReport";
-import { ContentDecayService } from "@/server/features/gsc/services/ContentDecayService";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
-  contentDecayInputSchema,
   type SearchPerformanceType,
   searchPerformanceInputSchema,
   searchPerformanceTableExportInputSchema,
@@ -233,24 +231,4 @@ export const exportSearchPerformanceTable = createServerFn({ method: "POST" })
       dimension: data.dimension,
       rows: toDimensionRows(result.rows),
     };
-  });
-
-/** Pages whose clicks fell in every one of the last N complete months. All
- *  first-party GSC data (plus the latest audit's word counts), free. */
-export const getContentDecayReport = createServerFn({ method: "POST" })
-  .middleware(requireProjectContext)
-  .validator(contentDecayInputSchema)
-  .handler(async ({ data, context }) => {
-    try {
-      const report = await ContentDecayService.getContentDecay({
-        projectId: context.projectId,
-        months: data.months,
-      });
-      return { connected: true as const, ...report };
-    } catch (error) {
-      if (isExpectedConnectionFailure(error)) {
-        return { connected: false as const };
-      }
-      throw error;
-    }
   });

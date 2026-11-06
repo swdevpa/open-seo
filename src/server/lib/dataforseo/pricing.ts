@@ -37,7 +37,6 @@ import {
   SERP_READS_PER_QUERY,
 } from "@/server/lib/dataforseo/serp";
 import { fetchLighthouseResult } from "@/server/lib/dataforseo/lighthouse";
-import { fetchContentOptimizationSource } from "@/server/lib/dataforseo/content-optimization";
 import {
   fetchLlmAggregatedMetrics,
   fetchLlmCrossAggregatedMetrics,
@@ -56,7 +55,6 @@ import {
   AI_LIVE_RECORD_COST_USD,
   AI_RECORD_COST_USD,
 } from "@/shared/ai-visibility";
-import { CONTENT_OPTIMIZATION_TOP_PAGES } from "@/shared/content-optimization";
 import {
   costPerSerpAtDepth,
   serpKeywordCostMultiplier,
@@ -113,15 +111,6 @@ const UPDATES_PRIORITY_PER_10_USD = 0.0015;
 // OnPage Lighthouse, live (dataforseo.com/pricing/on-page/lighthouse-api);
 // fixtures show $0.00425 billed.
 const LIGHTHOUSE_LIVE_USD = 0.005;
-
-// Google Organic SERP, live, first page of 10 results
-// (dataforseo.com/pricing/serp/google-organic-serp-api). Content optimization
-// still reads its one SERP live; rank checks moved to queued reads.
-const SERP_LIVE_FIRST_PAGE_USD = 0.002;
-
-// OnPage Content Parsing, live (dataforseo.com/pricing/on-page/onpage-api).
-// Kept above the list price as an upper bound per parsed page.
-const CONTENT_PARSING_LIVE_USD = 0.002;
 
 // AI Optimization (dataforseo.com/pricing/ai-optimization/llm-mentions):
 // $0.1 per request + $0.001 per row on every llm_mentions endpoint.
@@ -300,16 +289,6 @@ export const dataforseoPricing = {
   },
   lighthouse: {
     live: priced(fetchLighthouseResult, () => LIGHTHOUSE_LIVE_USD),
-  },
-  contentOptimization: {
-    // One 10-result live SERP, then the target plus the top competitors
-    // parsed live.
-    scan: priced(
-      fetchContentOptimizationSource,
-      (input) =>
-        SERP_LIVE_FIRST_PAGE_USD * serpKeywordCostMultiplier(input.keyword) +
-        (CONTENT_OPTIMIZATION_TOP_PAGES + 1) * CONTENT_PARSING_LIVE_USD,
-    ),
   },
   aiSearch: {
     mentionsSearch: priced(

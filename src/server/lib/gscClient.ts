@@ -1,4 +1,4 @@
-import { mintGoogleAccessToken } from "@/server/lib/googleAccessToken";
+import { getGoogleAccessToken } from "@/server/features/google/googleOAuth";
 import { getGoogleAccessMode } from "@/server/features/google/googleAccess";
 import { getGatewayGoogleFetch } from "@/server/features/google/gatewayGoogle";
 import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
@@ -90,7 +90,7 @@ export function createGscClient(opts: {
   // concurrent requests (inspectUrls fans out) must not race the refresh.
   let tokenPromise: Promise<string> | undefined;
   function getToken(): Promise<string> {
-    tokenPromise ??= mintGoogleAccessToken({
+    tokenPromise ??= getGoogleAccessToken({
       providerId: GSC_OAUTH_PROVIDER_ID,
       userId: opts.userId,
       accountId: opts.gscAccountId,

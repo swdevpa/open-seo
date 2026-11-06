@@ -15,12 +15,6 @@ import { Spinner } from "@/client/components/ui/spinner";
 import { DataTableTabs } from "@/client/components/table/DataTableToolbar";
 import { TabsTrigger } from "@/client/components/ui/tabs";
 import { GoogleConnectionCard } from "@/client/features/integrations/GoogleConnectionCard";
-import {
-  ContentDecayMonthsSelect,
-  ContentDecayPanel,
-  contentDecayQueryOptions,
-  exportContentDecay,
-} from "@/client/features/search-performance/ContentDecayTable";
 import { DimensionSection } from "@/client/features/search-performance/SearchPerformanceDimensionSection";
 import { SearchPerformanceSelects } from "@/client/features/search-performance/SearchPerformanceSelects";
 import { SearchPerformanceLoadingState } from "@/client/features/search-performance/SearchPerformanceLoadingState";
@@ -45,7 +39,6 @@ import {
   getSearchPerformanceReport,
 } from "@/serverFunctions/searchPerformance";
 import {
-  CONTENT_DECAY_DEFAULT_MONTHS,
   SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE,
   SEARCH_PERFORMANCE_TABS,
   type SearchPerformanceSearch,
@@ -124,8 +117,6 @@ export function SearchPerformancePage({
   const tab = isWeb ? (search.tab ?? "striking") : "pages";
   const page = search.page ?? 1;
   const pageSize = search.size ?? SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE;
-  const decayMonths = search.months ?? CONTENT_DECAY_DEFAULT_MONTHS;
-  const isDecayTab = tab === "decay";
 
   const filterInput = {
     ...buildFilterInput({ type, range, device, country }),
@@ -189,13 +180,6 @@ export function SearchPerformancePage({
     try {
       if (tab === "striking") {
         await exportStriking(report, target);
-        return;
-      }
-      if (isDecayTab) {
-        const decay = await queryClient.fetchQuery(
-          contentDecayQueryOptions(projectId, decayMonths),
-        );
-        if (decay.connected) await exportContentDecay(decay, target);
         return;
       }
       const data = await exportSearchPerformanceTable({
@@ -327,44 +311,34 @@ export function SearchPerformancePage({
                   </>
                 ) : null}
                 <TabsTrigger value="pages">Pages</TabsTrigger>
-                <TabsTrigger value="decay">Content decay</TabsTrigger>
               </DataTableTabs>
               <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2">
-                {isDecayTab ? (
-                  <ContentDecayMonthsSelect
-                    months={decayMonths}
-                    onMonthsChange={(months) => onSearchChange({ months })}
-                  />
-                ) : (
-                  <>
-                    <Button
-                      type="button"
-                      variant={showFilters ? "secondary" : "ghost"}
-                      size="sm"
-                      aria-expanded={showFilters}
-                      aria-controls="search-performance-filters"
-                      onClick={() => setShowFilters((current) => !current)}
-                      title="Toggle table filters"
-                    >
-                      <SlidersHorizontal data-icon="inline-start" />
-                      Filters
-                      {activeFilterCount > 0 ? (
-                        <Badge size="sm">{activeFilterCount}</Badge>
-                      ) : null}
-                    </Button>
-                    {reportQuery.isFetching && !reportQuery.isPending ? (
-                      <Spinner className="size-4 text-muted-foreground" />
-                    ) : null}
-                    <SearchPerformanceSelects
-                      search={search}
-                      countries={report.countries}
-                      onSearchChange={onSearchChange}
-                    />
-                  </>
-                )}
+                <Button
+                  type="button"
+                  variant={showFilters ? "secondary" : "ghost"}
+                  size="sm"
+                  aria-expanded={showFilters}
+                  aria-controls="search-performance-filters"
+                  onClick={() => setShowFilters((current) => !current)}
+                  title="Toggle table filters"
+                >
+                  <SlidersHorizontal data-icon="inline-start" />
+                  Filters
+                  {activeFilterCount > 0 ? (
+                    <Badge size="sm">{activeFilterCount}</Badge>
+                  ) : null}
+                </Button>
+                {reportQuery.isFetching && !reportQuery.isPending ? (
+                  <Spinner className="size-4 text-muted-foreground" />
+                ) : null}
+                <SearchPerformanceSelects
+                  search={search}
+                  countries={report.countries}
+                  onSearchChange={onSearchChange}
+                />
               </div>
 
-              {showFilters && !isDecayTab ? filtersPanel : null}
+              {showFilters ? filtersPanel : null}
               {reportQuery.isPlaceholderData ? (
                 <div className="p-8 text-sm" role="status">
                   Loading matching results…
@@ -384,8 +358,6 @@ export function SearchPerformancePage({
                   isFiltered={activeFilterCount > 0}
                   onClearFilters={resetFilters}
                 />
-              ) : isDecayTab ? (
-                <ContentDecayPanel projectId={projectId} months={decayMonths} />
               ) : (
                 <DimensionSection
                   projectId={projectId}

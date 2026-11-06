@@ -21,7 +21,6 @@ describe("buildSamSkillSource", () => {
       "seo-audit",
       "seo-coach",
       "seo-project-setup",
-      "traffic-drop-diagnosis",
     ]);
 
     const loaded = await source.load("seo-project-setup");

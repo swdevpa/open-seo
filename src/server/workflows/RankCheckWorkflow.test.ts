@@ -23,7 +23,6 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("cloudflare:workers", () => ({
   WorkflowEntrypoint: vi.fn(),
-  env: {},
 }));
 vi.mock("cloudflare:workflows", () => ({
   NonRetryableError: class extends Error {},

@@ -12,7 +12,6 @@ import {
 } from "@/server/referrals/dub";
 import type { GA4_OAUTH_PROVIDER_ID } from "@/shared/ga4";
 import type { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
-import type { YOUTUBE_OAUTH_PROVIDER_ID } from "@/shared/youtube";
 
 /** What an account erasure removes outside the database. */
 type StorageErasureInput = {
@@ -28,10 +27,7 @@ type StorageErasureInput = {
   activeLocalRankWorkflowIds: string[];
   r2Keys: string[];
   googleAccounts: {
-    providerId:
-      | typeof GSC_OAUTH_PROVIDER_ID
-      | typeof GA4_OAUTH_PROVIDER_ID
-      | typeof YOUTUBE_OAUTH_PROVIDER_ID;
+    providerId: typeof GSC_OAUTH_PROVIDER_ID | typeof GA4_OAUTH_PROVIDER_ID;
     accountId: string;
   }[];
 };
